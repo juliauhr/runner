@@ -2,515 +2,613 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HEAD RUN — VR Infinite Runner</title>
+  <title>HEAD RUN</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #000; font-family: 'Courier New', monospace; overflow: hidden; }
+    canvas { display: block; }
 
-    #ui-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 100; display: flex; flex-direction: column;
+    #overlay {
+      position: fixed; inset: 0; z-index: 10;
+      display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.88); color: #00ffcc; pointer-events: none;
+      background: rgba(0,0,0,0.9); color: #00ffcc;
+      pointer-events: none;
     }
-    #ui-overlay.hidden { display: none; }
+    #overlay.hidden { display: none; }
+
     #start-screen { text-align: center; pointer-events: all; }
-    #start-screen h1 {
-      font-size: clamp(2rem, 6vw, 4rem); letter-spacing: 0.3em;
-      color: #00ffcc; text-shadow: 0 0 30px #00ffcc, 0 0 60px #00ffcc88;
-      margin-bottom: 0.4rem;
+    h1 {
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      letter-spacing: 0.35em; color: #00ffcc;
+      text-shadow: 0 0 40px #00ffcc, 0 0 80px #00ffcc66;
+      margin-bottom: 0.3rem;
     }
-    .subtitle { font-size: 0.9rem; letter-spacing: 0.2em; color: #00ffcc66; margin-bottom: 2.5rem; }
-    .instruction {
-      background: rgba(0,255,204,0.05); border: 1px solid rgba(0,255,204,0.25);
-      border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.8rem;
-      max-width: 380px; text-align: left; font-size: 0.82rem; line-height: 1.7; color: #aaffee;
+    .sub { font-size: 0.85rem; letter-spacing: 0.25em; color: #00ffcc55; margin-bottom: 2.5rem; }
+
+    .card {
+      background: rgba(0,255,204,0.04);
+      border: 1px solid rgba(0,255,204,0.2);
+      border-radius: 10px; padding: 1rem 1.4rem;
+      margin-bottom: 0.7rem; max-width: 370px;
+      text-align: left; font-size: 0.8rem;
+      line-height: 1.75; color: #99eedd;
     }
-    .instruction strong {
-      color: #00ffcc; display: block; margin-bottom: 0.3rem;
-      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    .card strong {
+      color: #00ffcc; display: block; margin-bottom: 0.25rem;
+      font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
     }
-    button {
-      margin-top: 1.5rem; padding: 0.9rem 2.5rem;
+
+    .btn {
+      display: inline-block; margin-top: 1.4rem;
+      padding: 0.85rem 2.8rem;
       background: transparent; border: 2px solid #00ffcc;
       color: #00ffcc; font-family: 'Courier New', monospace;
       font-size: 0.95rem; letter-spacing: 0.3em; text-transform: uppercase;
-      cursor: pointer; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,255,204,0.15);
+      cursor: pointer; transition: all 0.18s;
+      box-shadow: 0 0 24px rgba(0,255,204,0.12);
     }
-    button:hover { background: rgba(0,255,204,0.1); }
+    .btn:hover { background: rgba(0,255,204,0.08); box-shadow: 0 0 40px rgba(0,255,204,0.3); }
+
+    #game-over { text-align: center; pointer-events: all; display: none; }
+    #game-over.show { display: block; }
+    #game-over h2 { font-size: clamp(2rem,5vw,3.5rem); letter-spacing: 0.3em; color: #ff3355; text-shadow: 0 0 30px #ff3355; margin-bottom: 0.8rem; }
+    #final-dist { font-size: 1.1rem; color: #00ffcc; letter-spacing: 0.15em; margin-bottom: 1.5rem; }
 
     #hud {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-      padding: 1rem 1.5rem; display: flex; justify-content: space-between; pointer-events: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9;
+      padding: 1rem 1.4rem; display: flex;
+      justify-content: space-between; pointer-events: none;
     }
     #hud.hidden { display: none; }
-    .hud-panel {
-      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 6px; padding: 0.4rem 0.9rem; color: #00ffcc;
+    .hpanel {
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(0,255,204,0.25);
+      border-radius: 6px; padding: 0.35rem 0.85rem; color: #00ffcc;
     }
-    .hud-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: #00ffcc55; }
-    .hud-value { font-size: 1.3rem; letter-spacing: 0.1em; text-shadow: 0 0 8px #00ffcc; }
+    .hlabel { font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase; color: #00ffcc44; }
+    .hval { font-size: 1.25rem; text-shadow: 0 0 8px #00ffcc; }
 
-    #bob-meter {
-      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-      z-index: 50; width: 180px; pointer-events: none;
+    #stepmeter {
+      position: fixed; bottom: 1.8rem; left: 50%;
+      transform: translateX(-50%); width: 170px; z-index: 9; pointer-events: none;
     }
-    #bob-meter.hidden { display: none; }
-    .meter-label { text-align: center; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #00ffcc55; margin-bottom: 4px; }
-    .meter-bg { background: rgba(0,255,204,0.1); border: 1px solid rgba(0,255,204,0.3); border-radius: 20px; height: 8px; overflow: hidden; }
-    #meter-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00ff88); border-radius: 20px; width: 0%; box-shadow: 0 0 8px #00ffcc; transition: width 0.08s; }
+    #stepmeter.hidden { display: none; }
+    .mlabel { text-align: center; font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase; color: #00ffcc44; margin-bottom: 3px; }
+    .mtrack { background: rgba(0,255,204,0.08); border: 1px solid rgba(0,255,204,0.25); border-radius: 20px; height: 7px; overflow: hidden; }
+    #mfill { height: 100%; width: 0; border-radius: 20px; background: linear-gradient(90deg,#00ffcc,#00ff88); box-shadow: 0 0 8px #00ffcc; transition: width 0.07s; }
 
-    #game-over-screen { text-align: center; pointer-events: all; display: none; }
-    #game-over-screen.visible { display: block; }
-    #game-over-screen h2 { font-size: clamp(1.5rem, 5vw, 3rem); letter-spacing: 0.3em; color: #ff4466; text-shadow: 0 0 30px #ff4466; margin-bottom: 1rem; }
-    #final-score { font-size: 1.1rem; color: #00ffcc; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
+    #vr-btn {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 20;
+      padding: 0.7rem 1.6rem;
+      background: rgba(0,0,0,0.8); border: 2px solid #00ffcc;
+      color: #00ffcc; font-family: 'Courier New', monospace;
+      font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase;
+      cursor: pointer; border-radius: 6px;
+      box-shadow: 0 0 20px rgba(0,255,204,0.2);
+    }
+    #vr-btn.hidden { display: none; }
   </style>
 </head>
 <body>
 
-<div id="ui-overlay">
+<!-- UI -->
+<div id="overlay">
   <div id="start-screen">
     <h1>HEAD RUN</h1>
-    <p class="subtitle">∞ infinite vr runner ∞</p>
-    <div class="instruction">
-      <strong>🎮 How to Move</strong>
-      Bob your head up and down rhythmically — each full bob cycle propels you forward. Stop and you stop.
+    <p class="sub">∞ infinite vr runner ∞</p>
+    <div class="card">
+      <strong>🎮 VR Movement</strong>
+      Bob your head up and down to move — each full bob cycle propels you forward.
+      Stop bobbing and you stop.
     </div>
-    <div class="instruction">
-      <strong>⚠️ Dodge Obstacles</strong>
-      Look left or right to steer. Speed increases with distance.
+    <div class="card">
+      <strong>🖥️ Desktop</strong>
+      Tap <kbd>W</kbd> rhythmically. Mouse or <kbd>A</kbd>/<kbd>D</kbd> to steer.
     </div>
-    <div class="instruction">
-      <strong>💻 No Headset?</strong>
-      Tap <kbd>W</kbd> rhythmically to simulate steps. <kbd>A</kbd>/<kbd>D</kbd> or mouse to steer.
+    <div class="card">
+      <strong>⚠️ Obstacles</strong>
+      Look left or right to steer around walls and pillars. Speed increases over time.
     </div>
-    <button onclick="startGame()">ENTER THE RUN</button>
+    <button class="btn" id="start-btn">ENTER THE RUN</button>
   </div>
-  <div id="game-over-screen">
+  <div id="game-over">
     <h2>COLLISION</h2>
-    <div id="final-score">DISTANCE: 0m</div>
-    <button onclick="restartGame()">RUN AGAIN</button>
+    <div id="final-dist">0m</div>
+    <button class="btn" id="restart-btn">RUN AGAIN</button>
   </div>
 </div>
 
 <div id="hud" class="hidden">
-  <div class="hud-panel">
-    <div class="hud-label">Distance</div>
-    <div class="hud-value" id="score-display">0m</div>
-  </div>
-  <div class="hud-panel">
-    <div class="hud-label">Speed</div>
-    <div class="hud-value" id="speed-display">—</div>
-  </div>
+  <div class="hpanel"><div class="hlabel">Distance</div><div class="hval" id="hdist">0m</div></div>
+  <div class="hpanel"><div class="hlabel">Speed</div><div class="hval" id="hspeed">STOP</div></div>
 </div>
 
-<div id="bob-meter" class="hidden">
-  <div class="meter-label">Bob Meter</div>
-  <div class="meter-bg"><div id="meter-fill"></div></div>
+<div id="stepmeter" class="hidden">
+  <div class="mlabel">Bob Power</div>
+  <div class="mtrack"><div id="mfill"></div></div>
 </div>
 
-<a-scene id="scene"
-  background="color: #050510"
-  fog="type: exponential; color: #050510; density: 0.035"
-  vr-mode-ui="enabled: true"
-  renderer="antialias: true; colorManagement: true">
+<button id="vr-btn" class="hidden">ENTER VR</button>
 
-  <a-entity id="rig" position="0 0 0">
-    <a-camera id="head-cam"
-      position="0 1.6 0"
-      look-controls="pointerLockEnabled: false"
-      wasd-controls="enabled: false">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+  }
+}
+</script>
 
-      <!-- Reticle -->
-      <a-entity position="0 0 -3"
-        geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.022"
-        material="color: #00ffcc; opacity: 0.6; shader: flat">
-      </a-entity>
+<script type="module">
+import * as THREE from 'three';
 
-      <!-- In-VR debug HUD: bottom-left of view, always visible -->
-      <a-entity position="-0.38 -0.28 -0.7">
-        <a-plane width="0.55" height="0.24"
-          material="color: #000010; opacity: 0.8; shader: flat; transparent: true">
-        </a-plane>
-        <a-text id="vr-debug-text"
-          value="Waiting..."
-          color="#00ffcc" width="0.9" align="left" anchor="left"
-          position="-0.26 0.08 0.005" wrap-count="32" font="mozillavr">
-        </a-text>
-        <a-text id="vr-step-text" value=""
-          color="#ffffff" width="1.1" align="center"
-          position="0 -0.08 0.005" font="mozillavr">
-        </a-text>
-      </a-entity>
-    </a-camera>
-  </a-entity>
+// ─── THREE / RENDERER ───────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+renderer.shadowMap.enabled = false;
+document.body.appendChild(renderer.domElement);
 
-  <a-entity id="track-container"></a-entity>
-
-  <a-light type="ambient" color="#001122" intensity="0.5"></a-light>
-  <a-light type="directional" color="#00ffcc" intensity="0.3" position="0 5 -5"></a-light>
-
-</a-scene>
-
-<script>
-// ============================================================
-//  CONSTANTS
-// ============================================================
-const SEG_LEN   = 10;
-const SEG_COUNT = 14;
-const TW        = 6;      // track width
-const TH        = 3.5;    // track height
-const LANE_W    = 1.5;
-
-// Bob detection tuning
-const BOB_EXCURSION  = 0.018; // metres peak-to-valley needed for a step (~1.8cm)
-const BOB_ALPHA      = 0.3;   // EMA smoothing (lower = smoother but more lag)
-const DIR_CONFIRM    = 4;     // frames needed to confirm a direction change
-const BOB_COOLDOWN_S = 0.22;  // min seconds between registered steps
-
-// Movement
-const BOOST_PER_STEP = 14;    // speed units added per step
-const BOOST_DECAY    = 7;     // speed units lost per second
-
-// ============================================================
-//  GAME STATE
-// ============================================================
-let gameActive = false;
-let gameOver   = false;
-
-let trackZ    = 0;
-let playerX   = 0;
-let distance  = 0;
-let stepBoost = 0;
-let speedCap  = 14;
-
-let segments  = [];
-let obstacles = [];
-
-// Bob detector
-let smoothY    = null;
-let prevSmooth = null;
-let peakY      = null;
-let valleyY    = null;
-let bobDir     = 0;    // confirmed direction: 1=up, -1=down, 0=unknown
-let dirCount   = 0;    // running confirmation counter
-let bobCooldown = 0;
-let totalSteps = 0;
-
-// Keyboard
-let keys   = {};
-let kbTimer = 0;
-
-// Loop
-let lastTime = null;
-
-// ============================================================
-//  INIT
-// ============================================================
-window.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-  document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
-  document.getElementById('scene').addEventListener('loaded', buildTrack);
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 });
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x050510);
+scene.fog = new THREE.FogExp2(0x050510, 0.038);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 1.6, 0);
+
+// Player rig — we move this in X for steering
+const rig = new THREE.Group();
+rig.add(camera);
+scene.add(rig);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x001122, 0.6));
+const dirLight = new THREE.DirectionalLight(0x00ffcc, 0.4);
+dirLight.position.set(0, 5, -5);
+scene.add(dirLight);
+
+// ─── VR SETUP ────────────────────────────────────────────────
+let xrSession = null;
+let xrRefSpace = null;
+let inVR = false;
+
+const vrBtn = document.getElementById('vr-btn');
+
+async function checkVRSupport() {
+  if (navigator.xr) {
+    const supported = await navigator.xr.isSessionSupported('immersive-vr');
+    if (supported) vrBtn.classList.remove('hidden');
+  }
+}
+checkVRSupport();
+
+vrBtn.addEventListener('click', async () => {
+  if (xrSession) return;
+  try {
+    xrSession = await navigator.xr.requestSession('immersive-vr', {
+      requiredFeatures: ['local-floor'],
+      optionalFeatures: ['bounded-floor', 'hand-tracking']
+    });
+    await renderer.xr.setSession(xrSession);
+    // Get floor-relative reference space for accurate Y tracking
+    xrRefSpace = await xrSession.requestReferenceSpace('local-floor');
+    renderer.xr.setReferenceSpace(xrRefSpace);
+    inVR = true;
+    vrBtn.classList.add('hidden');
+    xrSession.addEventListener('end', () => {
+      xrSession = null; xrRefSpace = null; inVR = false;
+      vrBtn.classList.remove('hidden');
+    });
+  } catch(e) {
+    console.error('XR session failed:', e);
+  }
+});
+
+// ─── CONSTANTS ───────────────────────────────────────────────
+const SEG_LEN   = 12;
+const SEG_COUNT = 16;
+const TW        = 6;
+const TH        = 3.5;
+const LANE_W    = 1.6;
+
+const BOB_EXCURSION  = 0.015; // metres peak→valley to register step
+const BOB_ALPHA      = 0.25;  // EMA smoothing (lower = more smoothing)
+const DIR_CONFIRM    = 5;     // frames to confirm direction change
+const BOB_COOLDOWN   = 0.20;  // seconds between steps
+const BOOST_AMOUNT   = 14;    // speed units added per step
+const BOOST_DECAY    = 6;     // speed units lost per second
+
+// ─── MATERIALS ───────────────────────────────────────────────
+const matFloor   = new THREE.MeshLambertMaterial({ color: 0x001133, emissive: 0x000511 });
+const matWall    = new THREE.MeshLambertMaterial({ color: 0x000a22, emissive: 0x001133, side: THREE.FrontSide });
+const matCeil    = new THREE.MeshLambertMaterial({ color: 0x000822, emissive: 0x000a1a });
+const matNeonG   = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
+const matNeonB   = new THREE.MeshBasicMaterial({ color: 0x0055ff });
+const matObs = [
+  new THREE.MeshBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.9 }),
+  new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 }),
+  new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.9 }),
+  new THREE.MeshBasicMaterial({ color: 0x0088ff, transparent: true, opacity: 0.9 }),
+];
+
+// ─── TRACK ───────────────────────────────────────────────────
+const trackContainer = new THREE.Group();
+scene.add(trackContainer);
+
+let segments  = []; // { group, z }
+let obstacles = []; // { z (world), x, hw, y, hh }  — precomputed in local-track coords
+
+function spawnSegment(z) {
+  const g = new THREE.Group();
+  g.position.z = -z;
+
+  const hw = TW / 2, hh = TH / 2;
+  const sl = SEG_LEN;
+
+  // Floor
+  addBox(g, TW, 0.05, sl, 0, -0.025, -sl/2, matFloor);
+  // Left wall
+  addBox(g, 0.05, TH, sl, -hw, hh, -sl/2, matWall);
+  // Right wall
+  addBox(g, 0.05, TH, sl,  hw, hh, -sl/2, matWall);
+  // Ceiling
+  addBox(g, TW, 0.05, sl, 0, TH+0.025, -sl/2, matCeil);
+
+  // Neon strips along the tunnel
+  addBox(g, 0.06, 0.06, sl, -hw+0.03, 0.03,    -sl/2, matNeonG);
+  addBox(g, 0.06, 0.06, sl,  hw-0.03, 0.03,    -sl/2, matNeonG);
+  addBox(g, 0.06, 0.06, sl, -hw+0.03, TH-0.03, -sl/2, matNeonB);
+  addBox(g, 0.06, 0.06, sl,  hw-0.03, TH-0.03, -sl/2, matNeonB);
+
+  // Obstacles (skip first grace zone)
+  if (z > 35 && Math.random() < 0.72) spawnObstacle(g, z);
+
+  trackContainer.add(g);
+  segments.push({ group: g, z });
+}
+
+function addBox(parent, w, h, d, x, y, z, mat) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  parent.add(m);
+  return m;
+}
+
+function spawnObstacle(parent, segZ) {
+  const type = Math.floor(Math.random() * 4);
+  const lz = -(SEG_LEN * 0.2 + Math.random() * SEG_LEN * 0.55);
+  const mat = matObs[type];
+
+  if (type === 0) {
+    // Side wall with gap
+    const onRight = Math.random() < 0.5;
+    const bx = onRight ? TW/4 : -TW/4;
+    const w = TW/2 - 0.85;
+    addBox(parent, w, TH, 0.55, bx, TH/2, lz, mat);
+    obstacles.push({ segZ, lz, x: bx, hw: w/2, y: TH/2, hh: TH/2 });
+  } else if (type === 1) {
+    // Pillar in a lane
+    const lx = (Math.floor(Math.random()*3)-1) * LANE_W;
+    addBox(parent, 1.1, TH, 1.1, lx, TH/2, lz, mat);
+    obstacles.push({ segZ, lz, x: lx, hw: 0.55, y: TH/2, hh: TH/2 });
+  } else if (type === 2) {
+    // Low bar
+    addBox(parent, TW-0.5, 0.55, 0.55, 0, 0.45, lz, mat);
+    obstacles.push({ segZ, lz, x: 0, hw: (TW-0.5)/2, y: 0.45, hh: 0.275 });
+  } else {
+    // High bar
+    addBox(parent, TW-0.5, 0.55, 0.55, 0, TH-0.4, lz, mat);
+    obstacles.push({ segZ, lz, x: 0, hw: (TW-0.5)/2, y: TH-0.4, hh: 0.275 });
+  }
+}
 
 function buildTrack() {
   for (let i = 0; i < SEG_COUNT; i++) spawnSegment(i * SEG_LEN);
 }
 
-// ============================================================
-//  TRACK GENERATION
-// ============================================================
-function spawnSegment(z) {
-  const el = document.createElement('a-entity');
-  el.setAttribute('position', `0 0 -${z}`);
+// ─── IN-VR DEBUG SPRITE ──────────────────────────────────────
+// A canvas texture attached to the camera so it's always in view
+const dbgCanvas  = document.createElement('canvas');
+dbgCanvas.width  = 512; dbgCanvas.height = 256;
+const dbgCtx     = dbgCanvas.getContext('2d');
+const dbgTex     = new THREE.CanvasTexture(dbgCanvas);
+const dbgMat     = new THREE.MeshBasicMaterial({ map: dbgTex, transparent: true, depthTest: false });
+const dbgPlane   = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 0.22), dbgMat);
+dbgPlane.position.set(-0.35, -0.22, -0.65);
+dbgPlane.renderOrder = 999;
+camera.add(dbgPlane);
 
-  makePlane(el, 0,     0,      -SEG_LEN/2, TW,     SEG_LEN, '-90 0 0', '#001133', '#000511');
-  makePlane(el, -TW/2, TH/2,   -SEG_LEN/2, SEG_LEN, TH, '0 90 0',  '#000a22', '#001133');
-  makePlane(el,  TW/2, TH/2,   -SEG_LEN/2, SEG_LEN, TH, '0 -90 0', '#000a22', '#001133');
-  makePlane(el, 0,     TH,     -SEG_LEN/2, TW,     SEG_LEN, '90 0 0',  '#000822', '#000a1a');
-
-  makeStrip(el, -TW/2+0.05, 0.05,    '#00ffcc');
-  makeStrip(el,  TW/2-0.05, 0.05,    '#00ffcc');
-  makeStrip(el, -TW/2+0.05, TH-0.05, '#0066ff');
-  makeStrip(el,  TW/2-0.05, TH-0.05, '#0066ff');
-
-  if (z > 30 && Math.random() < 0.7) spawnObstacle(el, z);
-
-  document.getElementById('track-container').appendChild(el);
-  segments.push({ el, z });
-}
-
-function makePlane(p, x, y, z, w, h, rot, color, emissive) {
-  const el = document.createElement('a-plane');
-  el.setAttribute('position', `${x} ${y} ${z}`);
-  el.setAttribute('rotation', rot);
-  el.setAttribute('width', w);
-  el.setAttribute('height', h);
-  el.setAttribute('material', `color:${color};emissive:${emissive};emissiveIntensity:0.4;roughness:0.7`);
-  p.appendChild(el);
-}
-
-function makeStrip(p, x, y, color) {
-  const el = document.createElement('a-box');
-  el.setAttribute('position', `${x} ${y} -${SEG_LEN/2}`);
-  el.setAttribute('width', 0.05); el.setAttribute('height', 0.05); el.setAttribute('depth', SEG_LEN);
-  el.setAttribute('material', `color:${color};emissive:${color};emissiveIntensity:1;shader:flat`);
-  p.appendChild(el);
-}
-
-function spawnObstacle(parent, segZ) {
-  const type = Math.floor(Math.random() * 4);
-  const lz = -(SEG_LEN * 0.25 + Math.random() * SEG_LEN * 0.5);
-
-  if (type === 0) {
-    const right = Math.random() < 0.5;
-    makeObstacle(parent, segZ, right ? TW/4 : -TW/4, TH/2, lz, TW/2-0.9, TH, 0.5, '#ff2244', '#ff4466');
-  } else if (type === 1) {
-    const lx = (Math.floor(Math.random() * 3) - 1) * LANE_W;
-    makeObstacle(parent, segZ, lx, TH/2, lz, 1.1, TH, 1.1, '#ff6600', '#ff8800');
-  } else if (type === 2) {
-    makeObstacle(parent, segZ, 0, 0.5, lz, TW-0.5, 0.6, 0.5, '#aa00ff', '#cc44ff');
-  } else {
-    makeObstacle(parent, segZ, 0, TH-0.5, lz, TW-0.5, 0.6, 0.5, '#0088ff', '#44aaff');
+function updateDebugCanvas(lines, stepFlash) {
+  const c = dbgCtx;
+  c.clearRect(0, 0, 512, 256);
+  c.fillStyle = 'rgba(0,0,16,0.78)';
+  roundRect(c, 0, 0, 512, 256, 18);
+  c.fill();
+  c.font = 'bold 32px monospace';
+  c.fillStyle = stepFlash ? '#ffffff' : '#00ffcc';
+  lines.forEach((l, i) => c.fillText(l, 20, 44 + i * 42));
+  if (stepFlash) {
+    c.fillStyle = '#ffffff';
+    c.font = 'bold 38px monospace';
+    c.fillText('✓ STEP!', 280, 220);
   }
+  dbgTex.needsUpdate = true;
 }
 
-function makeObstacle(parent, segZ, x, y, lz, w, h, d, color, emissive) {
-  const el = document.createElement('a-box');
-  el.setAttribute('position', `${x} ${y} ${lz}`);
-  el.setAttribute('width', w); el.setAttribute('height', h); el.setAttribute('depth', d);
-  el.setAttribute('material', `color:${color};emissive:${emissive};emissiveIntensity:0.85;transparent:true;opacity:0.92`);
-  parent.appendChild(el);
-  obstacles.push({ parent, segZ, lz, x, y, hw: w/2, hh: h/2 });
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
 }
 
-// ============================================================
-//  GAME CONTROL
-// ============================================================
+// ─── GAME STATE ──────────────────────────────────────────────
+let gameActive = false;
+let gameOver   = false;
+let trackZ     = 0;
+let playerX    = 0;
+let distance   = 0;
+let stepBoost  = 0;
+let speedCap   = 14;
+
+// Bob detection
+let smoothY    = null;
+let prevSmooth = null;
+let peakY      = null;
+let valleyY    = null;
+let bobDir     = 0;
+let dirCount   = 0;
+let bobCooldown = 0;
+let totalSteps  = 0;
+let stepFlash   = 0;
+
+// Keyboard
+let keys   = {};
+let kbTimer = 0;
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
+
+// Mouse look (desktop)
+let yaw = 0;
+let isPointerLocked = false;
+renderer.domElement.addEventListener('click', () => {
+  if (!inVR && gameActive) renderer.domElement.requestPointerLock();
+});
+document.addEventListener('pointerlockchange', () => {
+  isPointerLocked = document.pointerLockElement === renderer.domElement;
+});
+document.addEventListener('mousemove', e => {
+  if (isPointerLocked && !inVR) {
+    yaw -= e.movementX * 0.002;
+    camera.rotation.y = yaw;
+  }
+});
+
+// ─── GAME CONTROL ────────────────────────────────────────────
 function startGame() {
-  document.getElementById('ui-overlay').classList.add('hidden');
+  document.getElementById('overlay').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
-  document.getElementById('bob-meter').classList.remove('hidden');
+  document.getElementById('stepmeter').classList.remove('hidden');
   document.getElementById('start-screen').style.display = 'block';
 
   gameActive = true; gameOver = false;
   trackZ = 0; playerX = 0; distance = 0;
   stepBoost = 0; speedCap = 14;
-  totalSteps = 0; lastTime = null; kbTimer = 0;
-
-  // Reset bob state
+  totalSteps = 0; kbTimer = 0;
   smoothY = null; prevSmooth = null;
   peakY = null; valleyY = null;
-  bobDir = 0; dirCount = 0; bobCooldown = 0;
+  bobDir = 0; dirCount = 0; bobCooldown = 0; stepFlash = 0;
+  yaw = 0; camera.rotation.set(0, 0, 0);
 
-  const container = document.getElementById('track-container');
-  while (container.firstChild) container.removeChild(container.firstChild);
+  // Clear track
+  while (trackContainer.children.length) trackContainer.remove(trackContainer.children[0]);
   segments = []; obstacles = [];
+  rig.position.set(0, 0, 0);
   buildTrack();
-
-  document.getElementById('rig').setAttribute('position', '0 0 0');
-  requestAnimationFrame(gameLoop);
-}
-
-function restartGame() {
-  document.getElementById('game-over-screen').classList.remove('visible');
-  startGame();
 }
 
 function endGame() {
   if (gameOver) return;
   gameOver = true; gameActive = false;
   document.getElementById('hud').classList.add('hidden');
-  document.getElementById('bob-meter').classList.add('hidden');
-  document.getElementById('final-score').textContent = 'DISTANCE: ' + Math.floor(distance) + 'm';
-  document.getElementById('ui-overlay').classList.remove('hidden');
-  document.getElementById('game-over-screen').classList.add('visible');
+  document.getElementById('stepmeter').classList.add('hidden');
+  document.getElementById('final-dist').textContent = 'DISTANCE: ' + Math.floor(distance) + 'm';
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('game-over').classList.add('show');
   document.getElementById('start-screen').style.display = 'none';
 }
 
-// ============================================================
-//  MAIN LOOP
-// ============================================================
-function gameLoop(ts) {
-  if (!gameActive) return;
-  if (!lastTime) lastTime = ts;
-  const dt = Math.min((ts - lastTime) / 1000, 0.05);
-  lastTime = ts;
-
-  // Head bob from camera world position
-  const cam = document.getElementById('head-cam');
-  if (cam && cam.object3D) {
-    const wp = new THREE.Vector3();
-    cam.object3D.getWorldPosition(wp);
-    detectBob(wp.y, dt);
-  }
-
-  // Keyboard steps
-  handleKeys(dt);
-
-  // Cooldown tick
-  if (bobCooldown > 0) bobCooldown -= dt;
-
-  // Steering
-  let steer = 0;
-  if (keys['a'] || keys['arrowleft'])  steer = -1;
-  if (keys['d'] || keys['arrowright']) steer =  1;
-  if (steer === 0 && cam && cam.object3D) {
-    const dir = new THREE.Vector3();
-    cam.object3D.getWorldDirection(dir);
-    steer = Math.max(-1, Math.min(1, dir.x * 2.2));
-  }
-  playerX = Math.max(-TW/2+0.6, Math.min(TW/2-0.6, playerX + steer * 4 * dt));
-  document.getElementById('rig').setAttribute('position', `${playerX} 0 0`);
-
-  // Forward movement — bob-driven only
-  trackZ   += stepBoost * dt;
-  distance += stepBoost * dt;
-  stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
-  speedCap  = Math.min(30, 14 + distance * 0.006);
-
-  document.getElementById('track-container').setAttribute('position', `0 0 ${trackZ}`);
-
-  // Segment recycling
-  const farthest = segments.reduce((m, s) => Math.max(m, s.z), 0);
-  while (segments.length < SEG_COUNT) spawnSegment(farthest + SEG_LEN);
-  for (let i = segments.length - 1; i >= 0; i--) {
-    if (trackZ - segments[i].z > SEG_LEN * 1.5) {
-      segments[i].el.parentNode.removeChild(segments[i].el);
-      obstacles = obstacles.filter(o => o.parent !== segments[i].el);
-      segments.splice(i, 1);
-    }
-  }
-
-  // Collision
-  checkCollision();
-
-  // HUD
-  document.getElementById('score-display').textContent = Math.floor(distance) + 'm';
-  document.getElementById('speed-display').textContent =
-    stepBoost > 0.5 ? Math.round(stepBoost / BOOST_PER_STEP * 100) + '%' : 'STOP';
-  document.getElementById('meter-fill').style.width =
-    Math.min(100, stepBoost / speedCap * 100) + '%';
-
-  requestAnimationFrame(gameLoop);
+function restartGame() {
+  document.getElementById('game-over').classList.remove('show');
+  startGame();
 }
 
-// ============================================================
-//  HEAD BOB DETECTOR
-//
-//  Strategy: exponential smoothing on raw Y, then track direction
-//  using a confirmation counter (avoids single-frame noise triggering).
-//  When direction flips from DOWN→UP and the peak-to-valley distance
-//  exceeds BOB_EXCURSION, register a step.
-// ============================================================
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', restartGame);
+
+// ─── BOB DETECTION ───────────────────────────────────────────
 function detectBob(rawY, dt) {
   if (smoothY === null) {
     smoothY = rawY; prevSmooth = rawY;
     peakY = rawY; valleyY = rawY; bobDir = 0; dirCount = 0;
-    setVRDebug('Ready — bob your head!');
     return;
   }
 
-  // EMA smoothing
   smoothY += (rawY - smoothY) * BOB_ALPHA;
   const dy = smoothY - prevSmooth;
   prevSmooth = smoothY;
 
-  // Direction confirmation counter
-  if (dy > 0.00005)       dirCount = Math.min(dirCount + 1,  DIR_CONFIRM + 4);
-  else if (dy < -0.00005) dirCount = Math.max(dirCount - 1, -(DIR_CONFIRM + 4));
+  // Accumulate direction confirmation
+  if      (dy >  0.00005) dirCount = Math.min(dirCount + 1,  DIR_CONFIRM + 6);
+  else if (dy < -0.00005) dirCount = Math.max(dirCount - 1, -(DIR_CONFIRM + 6));
 
-  const confirmedDir =
+  const newDir =
     dirCount >=  DIR_CONFIRM ?  1 :
-    dirCount <= -DIR_CONFIRM ? -1 :
-    bobDir; // hold last confirmed direction
+    dirCount <= -DIR_CONFIRM ? -1 : bobDir;
 
-  if (confirmedDir !== bobDir) {
-    if (confirmedDir === -1) {
-      // Just started going DOWN — record peak
+  if (newDir !== bobDir && newDir !== 0) {
+    if (newDir === -1) {
+      // Turned downward — record peak
       peakY = smoothY;
     }
-    if (confirmedDir === 1 && bobDir === -1) {
-      // Just switched from DOWN to UP — record valley & check excursion
+    if (newDir === 1 && bobDir === -1) {
+      // Turned upward after going down — check excursion
       valleyY = smoothY;
       const excursion = (peakY ?? smoothY) - valleyY;
       if (excursion >= BOB_EXCURSION && bobCooldown <= 0) {
         registerStep(excursion);
       }
-      peakY = smoothY; // reset for next cycle
+      peakY = smoothY;
     }
-    bobDir = confirmedDir;
+    bobDir = newDir;
   }
 
-  // Continuously update running peak/valley
-  if (bobDir === 1  && smoothY > (peakY   ?? -Infinity)) peakY   = smoothY;
+  // Track running peak/valley
+  if (bobDir ===  1 && smoothY > (peakY   ?? -Infinity)) peakY   = smoothY;
   if (bobDir === -1 && smoothY < (valleyY ??  Infinity)) valleyY = smoothY;
-
-  // VR debug overlay
-  const curExc = (peakY !== null && valleyY !== null)
-    ? Math.abs((bobDir === -1 ? (peakY - smoothY) : (smoothY - valleyY))).toFixed(3)
-    : '?';
-  setVRDebug(
-    `Y raw:  ${rawY.toFixed(3)}\n` +
-    `Y smth: ${smoothY.toFixed(3)}\n` +
-    `Excur:  ${curExc} / ${BOB_EXCURSION}\n` +
-    `Dir: ${bobDir > 0 ? '↑UP' : bobDir < 0 ? '↓DN' : '--'}  Steps: ${totalSteps}`
-  );
 }
 
 function registerStep(excursion) {
   totalSteps++;
-  bobCooldown = BOB_COOLDOWN_S;
-
-  const boost = Math.min(BOOST_PER_STEP * (1 + excursion * 3), BOOST_PER_STEP * 1.5);
+  bobCooldown = BOB_COOLDOWN;
+  const boost = Math.min(BOOST_AMOUNT * (1 + excursion * 4), BOOST_AMOUNT * 1.5);
   stepBoost = Math.min(stepBoost + boost, speedCap);
-
-  const flashEl = document.getElementById('vr-step-text');
-  if (flashEl) {
-    flashEl.setAttribute('value', '✓ STEP!');
-    setTimeout(() => { if (flashEl) flashEl.setAttribute('value', ''); }, 280);
-  }
+  stepFlash = 0.3;
 }
 
-function setVRDebug(msg) {
-  const el = document.getElementById('vr-debug-text');
-  if (el) el.setAttribute('value', msg);
-}
-
-// ============================================================
-//  KEYBOARD FALLBACK
-// ============================================================
-function handleKeys(dt) {
-  if (keys['w'] || keys['arrowup']) {
-    kbTimer += dt;
-    if (kbTimer >= 0.35) {
-      kbTimer = 0;
-      registerStep(BOB_EXCURSION * 2);
-    }
-  } else {
-    kbTimer = 0;
-  }
-}
-
-// ============================================================
-//  COLLISION
-// ============================================================
+// ─── COLLISION ───────────────────────────────────────────────
 function checkCollision() {
-  const pMinX = playerX - 0.4, pMaxX = playerX + 0.4;
-  const pMinY = 0.7, pMaxY = 1.95;
+  const px = playerX;
+  const pMinX = px - 0.38, pMaxX = px + 0.38;
+  const pMinY = 0.65,      pMaxY = 2.0;
 
   for (const obs of obstacles) {
-    // Obstacle world Z = container offset - segment Z + local Z within segment
+    // World Z of obstacle in track-container local space
+    // segment is at -obs.segZ, obstacle is at obs.lz within segment
+    // world Z = trackZ - obs.segZ + obs.lz
     const wz = trackZ - obs.segZ + obs.lz;
-    if (wz < -1.5 || wz > 1.5) continue;
+    if (wz < -1.8 || wz > 1.0) continue;
 
-    const hitX = pMaxX > obs.x - obs.hw && pMinX < obs.x + obs.hw;
-    const hitY = pMaxY > obs.y - obs.hh && pMinY < obs.y + obs.hh;
-    if (hitX && hitY) { endGame(); return; }
+    if (pMaxX > obs.x - obs.hw && pMinX < obs.x + obs.hw &&
+        pMaxY > obs.y - obs.hh && pMinY < obs.y + obs.hh) {
+      endGame();
+      return;
+    }
   }
 }
+
+// ─── MAIN RENDER LOOP ────────────────────────────────────────
+let lastTime = null;
+
+renderer.setAnimationLoop((time, frame) => {
+  const now = time / 1000;
+  const dt = lastTime !== null ? Math.min(now - lastTime, 0.05) : 0;
+  lastTime = now;
+
+  if (!gameActive) {
+    renderer.render(scene, camera);
+    return;
+  }
+
+  // ── HEAD Y from XR frame (VR) ──────────────────────────────
+  let headY = camera.getWorldPosition(new THREE.Vector3()).y;
+
+  if (inVR && frame && xrRefSpace) {
+    try {
+      const pose = frame.getViewerPose(xrRefSpace);
+      if (pose) {
+        // This is the real physical head Y in metres above the floor
+        headY = pose.transform.position.y;
+      }
+    } catch(e) {}
+  }
+
+  detectBob(headY, dt);
+  if (bobCooldown > 0) bobCooldown -= dt;
+  if (stepFlash   > 0) stepFlash   -= dt;
+
+  // ── Keyboard steps ─────────────────────────────────────────
+  if (keys['w'] || keys['arrowup']) {
+    kbTimer += dt;
+    if (kbTimer >= 0.32) { kbTimer = 0; registerStep(BOB_EXCURSION * 2); }
+  } else kbTimer = 0;
+
+  // ── Steering ───────────────────────────────────────────────
+  let steer = 0;
+  if (keys['a'] || keys['arrowleft'])  steer = -1;
+  if (keys['d'] || keys['arrowright']) steer =  1;
+
+  if (steer === 0) {
+    // Use camera look direction for steering (works in VR naturally)
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    steer = Math.max(-1, Math.min(1, dir.x * 2.5));
+  }
+
+  playerX = Math.max(-TW/2 + 0.55, Math.min(TW/2 - 0.55, playerX + steer * 4 * dt));
+  rig.position.x = playerX;
+
+  // ── Forward movement ───────────────────────────────────────
+  trackZ   += stepBoost * dt;
+  distance += stepBoost * dt;
+  stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
+  speedCap  = Math.min(30, 14 + distance * 0.006);
+  trackContainer.position.z = trackZ;
+
+  // ── Segment recycling ──────────────────────────────────────
+  const farthest = segments.reduce((m, s) => Math.max(m, s.z), 0);
+  while (segments.length < SEG_COUNT) spawnSegment(farthest + SEG_LEN);
+
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const passed = trackZ - segments[i].z;
+    if (passed > SEG_LEN * 2) {
+      trackContainer.remove(segments[i].group);
+      // Dispose geometries
+      segments[i].group.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+      obstacles = obstacles.filter(o => o.segZ !== segments[i].z);
+      segments.splice(i, 1);
+    }
+  }
+
+  // ── Collision ──────────────────────────────────────────────
+  checkCollision();
+
+  // ── HUD ────────────────────────────────────────────────────
+  document.getElementById('hdist').textContent  = Math.floor(distance) + 'm';
+  document.getElementById('hspeed').textContent =
+    stepBoost > 0.5 ? Math.round(stepBoost / BOOST_AMOUNT * 100) + '%' : 'STOP';
+  document.getElementById('mfill').style.width  =
+    Math.min(100, stepBoost / speedCap * 100) + '%';
+
+  // ── VR debug canvas ────────────────────────────────────────
+  const curExc = (peakY !== null && valleyY !== null)
+    ? Math.abs(peakY - (valleyY ?? peakY)).toFixed(3) : '-.---';
+  updateDebugCanvas([
+    `Y: ${headY.toFixed(3)}m`,
+    `Exc: ${curExc} / ${BOB_EXCURSION}`,
+    `Dir: ${bobDir > 0 ? '↑ UP' : bobDir < 0 ? '↓ DN' : '-- --'}`,
+    `Steps: ${totalSteps}   Cool: ${bobCooldown > 0 ? bobCooldown.toFixed(2)+'s' : 'OK'}`,
+    `Boost: ${stepBoost.toFixed(1)}`,
+  ], stepFlash > 0);
+
+  renderer.render(scene, camera);
+});
+
+// Initial debug canvas
+updateDebugCanvas(['Press START to begin', '', '', '', ''], false);
+
 </script>
 </body>
 </html>
