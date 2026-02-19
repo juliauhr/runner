@@ -283,7 +283,7 @@ function addBox(parent, w, h, d, x, y, z, mat) {
 }
 
 function spawnObstacle(parent, segZ) {
-  const type = Math.floor(Math.random() * 4);
+  const type = Math.floor(Math.random() * 2); // 0=side wall, 1=pillar only
   const lz = -(SEG_LEN * 0.2 + Math.random() * SEG_LEN * 0.55);
   const mat = matObs[type];
 
@@ -322,7 +322,7 @@ const dbgCtx     = dbgCanvas.getContext('2d');
 const dbgTex     = new THREE.CanvasTexture(dbgCanvas);
 const dbgMat     = new THREE.MeshBasicMaterial({ map: dbgTex, transparent: true, depthTest: false });
 const dbgPlane   = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 0.22), dbgMat);
-dbgPlane.position.set(-0.35, -0.22, -0.65);
+dbgPlane.position.set(0, 0, -0.65);
 dbgPlane.renderOrder = 999;
 camera.add(dbgPlane);
 
