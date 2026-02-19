@@ -219,9 +219,9 @@ const TW        = 6;
 const TH        = 3.5;
 const LANE_W    = 1.6;
 
-const BOB_EXCURSION  = 0.003; // metres peak→valley (~3mm)
-const BOB_ALPHA      = 0.25;  // EMA smoothing (lower = more smoothing)
-const DIR_CONFIRM    = 5;     // frames to confirm direction change
+const BOB_EXCURSION  = 0.0015; // metres peak→valley (~1.5mm) — lowered for smaller steps
+const BOB_ALPHA      = 0.32;  // EMA smoothing (lower = more smoothing) — increased to preserve small movements
+const DIR_CONFIRM    = 3;     // frames to confirm direction change — reduced for faster detection
 const BOB_COOLDOWN   = 0.20;  // seconds between steps
 const BOOST_AMOUNT   = 6;     // speed units added per step
 const BOOST_DECAY    = 2.5;   // speed units lost per second
