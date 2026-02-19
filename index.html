@@ -495,9 +495,10 @@ function checkCollision() {
   const pMinY = 0.65,      pMaxY = 2.0;
 
   for (const obs of obstacles) {
-    // World Z of obstacle in track-container local space
-    // segment is at -obs.segZ, obstacle is at obs.lz within segment
-    // world Z = trackZ - obs.segZ + obs.lz
+    // Container is at +trackZ. Segment is at -obs.segZ within container.
+    // Obstacle is at obs.lz within segment. Player sits at world Z=0.
+    // Obstacle world Z = trackZ - obs.segZ + obs.lz
+    // Passes player when this ≈ 0, i.e. trackZ ≈ segZ - lz
     const wz = trackZ - obs.segZ + obs.lz;
     if (wz < -1.8 || wz > 1.0) continue;
 
@@ -565,6 +566,8 @@ renderer.setAnimationLoop((time, frame) => {
   distance += stepBoost * dt;
   stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
   speedCap  = Math.min(30, 14 + distance * 0.006);
+  // Segments are at -segZ inside container. Moving container by +trackZ
+  // brings them toward world Z=0 (where the player stands).
   trackContainer.position.z = trackZ;
 
   // ── Segment recycling ──────────────────────────────────────
