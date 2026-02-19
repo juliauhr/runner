@@ -10,259 +10,91 @@
     body { background: #000; font-family: 'Courier New', monospace; overflow: hidden; }
 
     #ui-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.85);
-      color: #00ffcc;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 100; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.88); color: #00ffcc; pointer-events: none;
     }
-
     #ui-overlay.hidden { display: none; }
-
-    #start-screen {
-      text-align: center;
-      pointer-events: all;
-    }
-
+    #start-screen { text-align: center; pointer-events: all; }
     #start-screen h1 {
-      font-size: clamp(2rem, 6vw, 4rem);
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: #00ffcc;
-      text-shadow: 0 0 30px #00ffcc, 0 0 60px #00ffcc88;
-      margin-bottom: 0.5rem;
+      font-size: clamp(2rem, 6vw, 4rem); letter-spacing: 0.3em;
+      color: #00ffcc; text-shadow: 0 0 30px #00ffcc, 0 0 60px #00ffcc88;
+      margin-bottom: 0.4rem;
     }
-
-    #start-screen .subtitle {
-      font-size: clamp(0.7rem, 2vw, 1rem);
-      letter-spacing: 0.2em;
-      color: #00ffcc88;
-      margin-bottom: 3rem;
-    }
-
+    .subtitle { font-size: 0.9rem; letter-spacing: 0.2em; color: #00ffcc66; margin-bottom: 2.5rem; }
     .instruction {
-      background: rgba(0,255,204,0.05);
-      border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 8px;
-      padding: 1.5rem 2rem;
-      margin-bottom: 1rem;
-      max-width: 400px;
-      text-align: left;
-      font-size: 0.85rem;
-      line-height: 1.8;
-      color: #aaffee;
+      background: rgba(0,255,204,0.05); border: 1px solid rgba(0,255,204,0.25);
+      border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 0.8rem;
+      max-width: 380px; text-align: left; font-size: 0.82rem; line-height: 1.7; color: #aaffee;
     }
-
     .instruction strong {
-      color: #00ffcc;
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      color: #00ffcc; display: block; margin-bottom: 0.3rem;
+      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
     }
-
-    #start-btn {
-      margin-top: 2rem;
-      padding: 1rem 3rem;
-      background: transparent;
-      border: 2px solid #00ffcc;
-      color: #00ffcc;
-      font-family: 'Courier New', monospace;
-      font-size: 1rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 0 20px rgba(0,255,204,0.2);
+    button {
+      margin-top: 1.5rem; padding: 0.9rem 2.5rem;
+      background: transparent; border: 2px solid #00ffcc;
+      color: #00ffcc; font-family: 'Courier New', monospace;
+      font-size: 0.95rem; letter-spacing: 0.3em; text-transform: uppercase;
+      cursor: pointer; transition: all 0.2s; box-shadow: 0 0 20px rgba(0,255,204,0.15);
     }
-
-    #start-btn:hover {
-      background: rgba(0,255,204,0.1);
-      box-shadow: 0 0 40px rgba(0,255,204,0.4);
-    }
+    button:hover { background: rgba(0,255,204,0.1); }
 
     #hud {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 50;
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      padding: 1rem 1.5rem; display: flex; justify-content: space-between; pointer-events: none;
     }
-
     #hud.hidden { display: none; }
-
     .hud-panel {
-      background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 6px;
-      padding: 0.5rem 1rem;
-      color: #00ffcc;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,204,0.3);
+      border-radius: 6px; padding: 0.4rem 0.9rem; color: #00ffcc;
     }
-
-    .hud-label {
-      font-size: 0.6rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #00ffcc66;
-    }
-
-    .hud-value {
-      font-size: 1.4rem;
-      letter-spacing: 0.1em;
-      text-shadow: 0 0 10px #00ffcc;
-    }
+    .hud-label { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: #00ffcc55; }
+    .hud-value { font-size: 1.3rem; letter-spacing: 0.1em; text-shadow: 0 0 8px #00ffcc; }
 
     #bob-meter {
-      position: fixed;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      width: 200px;
-      pointer-events: none;
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      z-index: 50; width: 180px; pointer-events: none;
     }
-
     #bob-meter.hidden { display: none; }
+    .meter-label { text-align: center; font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: #00ffcc55; margin-bottom: 4px; }
+    .meter-bg { background: rgba(0,255,204,0.1); border: 1px solid rgba(0,255,204,0.3); border-radius: 20px; height: 8px; overflow: hidden; }
+    #meter-fill { height: 100%; background: linear-gradient(90deg, #00ffcc, #00ff88); border-radius: 20px; width: 0%; box-shadow: 0 0 8px #00ffcc; transition: width 0.08s; }
 
-    .meter-label {
-      text-align: center;
-      font-size: 0.6rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #00ffcc66;
-      margin-bottom: 0.3rem;
-    }
-
-    .meter-bar-bg {
-      background: rgba(0,255,204,0.1);
-      border: 1px solid rgba(0,255,204,0.3);
-      border-radius: 20px;
-      height: 8px;
-      overflow: hidden;
-    }
-
-    #meter-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #00ffcc, #00ff88);
-      border-radius: 20px;
-      width: 0%;
-      transition: width 0.1s;
-      box-shadow: 0 0 10px #00ffcc;
-    }
-
-    #game-over-screen {
-      text-align: center;
-      pointer-events: all;
-      display: none;
-    }
-
+    #game-over-screen { text-align: center; pointer-events: all; display: none; }
     #game-over-screen.visible { display: block; }
-
-    #game-over-screen h2 {
-      font-size: clamp(1.5rem, 5vw, 3rem);
-      letter-spacing: 0.3em;
-      color: #ff4466;
-      text-shadow: 0 0 30px #ff4466;
-      margin-bottom: 1rem;
-    }
-
-    #final-score {
-      font-size: 1.2rem;
-      color: #00ffcc;
-      margin-bottom: 2rem;
-      letter-spacing: 0.2em;
-    }
-
-    #restart-btn {
-      padding: 0.8rem 2.5rem;
-      background: transparent;
-      border: 2px solid #00ffcc;
-      color: #00ffcc;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    #restart-btn:hover {
-      background: rgba(0,255,204,0.1);
-    }
-
-    #debug-panel {
-      position: fixed;
-      bottom: 5rem;
-      right: 1rem;
-      z-index: 50;
-      background: rgba(0,0,0,0.7);
-      border: 1px solid rgba(0,255,204,0.2);
-      border-radius: 6px;
-      padding: 0.5rem 0.8rem;
-      color: #00ffcc66;
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      pointer-events: none;
-      display: none;
-    }
-
-    #non-vr-hint {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      z-index: 50;
-      color: rgba(0,255,204,0.4);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      pointer-events: none;
-    }
-
-    #non-vr-hint.hidden { display: none; }
+    #game-over-screen h2 { font-size: clamp(1.5rem, 5vw, 3rem); letter-spacing: 0.3em; color: #ff4466; text-shadow: 0 0 30px #ff4466; margin-bottom: 1rem; }
+    #final-score { font-size: 1.1rem; color: #00ffcc; margin-bottom: 1.5rem; letter-spacing: 0.15em; }
   </style>
 </head>
 <body>
 
-<!-- UI Overlay -->
 <div id="ui-overlay">
   <div id="start-screen">
     <h1>HEAD RUN</h1>
     <p class="subtitle">∞ infinite vr runner ∞</p>
-
     <div class="instruction">
       <strong>🎮 How to Move</strong>
-      Bob your head up and down like you're walking — each bob cycle propels you forward. Stop bobbing and you'll stop moving.
+      Bob your head up and down rhythmically — each full bob cycle propels you forward. Stop and you stop.
     </div>
-
     <div class="instruction">
       <strong>⚠️ Dodge Obstacles</strong>
-      Look left or right to steer around incoming walls and barriers. Speed increases as you progress.
+      Look left or right to steer. Speed increases with distance.
     </div>
-
     <div class="instruction">
       <strong>💻 No Headset?</strong>
-      Tap <kbd>W</kbd> rhythmically to simulate walking steps. Use <kbd>A</kbd> / <kbd>D</kbd> or mouse to steer.
+      Tap <kbd>W</kbd> rhythmically to simulate steps. <kbd>A</kbd>/<kbd>D</kbd> or mouse to steer.
     </div>
-
-    <button id="start-btn" onclick="startGame()">ENTER THE RUN</button>
+    <button onclick="startGame()">ENTER THE RUN</button>
   </div>
-
   <div id="game-over-screen">
     <h2>COLLISION</h2>
     <div id="final-score">DISTANCE: 0m</div>
-    <button id="restart-btn" onclick="restartGame()">RUN AGAIN</button>
+    <button onclick="restartGame()">RUN AGAIN</button>
   </div>
 </div>
 
-<!-- HUD -->
 <div id="hud" class="hidden">
   <div class="hud-panel">
     <div class="hud-label">Distance</div>
@@ -270,319 +102,215 @@
   </div>
   <div class="hud-panel">
     <div class="hud-label">Speed</div>
-    <div class="hud-value" id="speed-display">1.0x</div>
+    <div class="hud-value" id="speed-display">—</div>
   </div>
 </div>
 
-<!-- Bob Meter -->
 <div id="bob-meter" class="hidden">
-  <div class="meter-label">Step Meter</div>
-  <div class="meter-bar-bg">
-    <div id="meter-fill"></div>
-  </div>
+  <div class="meter-label">Bob Meter</div>
+  <div class="meter-bg"><div id="meter-fill"></div></div>
 </div>
 
-<div id="debug-panel">
-  HEAD Y: <span id="debug-y">0.000</span><br>
-  BOB: <span id="debug-bob">0.000</span><br>
-  STEPS: <span id="debug-steps">0</span>
-</div>
-
-<div id="non-vr-hint">
-  No VR? Use W/A/D keys or mouse
-</div>
-
-<!-- A-Frame Scene -->
 <a-scene id="scene"
   background="color: #050510"
-  fog="type: exponential; color: #050510; density: 0.04"
+  fog="type: exponential; color: #050510; density: 0.035"
   vr-mode-ui="enabled: true"
-  renderer="antialias: true; colorManagement: true; physicallyCorrectLights: true">
+  renderer="antialias: true; colorManagement: true">
 
-  <a-assets>
-    <!-- Nothing to preload, all procedural -->
-  </a-assets>
-
-  <!-- Camera Rig -->
   <a-entity id="rig" position="0 0 0">
     <a-camera id="head-cam"
       position="0 1.6 0"
       look-controls="pointerLockEnabled: false"
       wasd-controls="enabled: false">
 
-      <!-- Crosshair / reticle -->
-      <a-entity id="reticle"
-        position="0 0 -3"
-        geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.02"
-        material="color: #00ffcc; opacity: 0.7; shader: flat"
-        visible="true">
+      <!-- Reticle -->
+      <a-entity position="0 0 -3"
+        geometry="primitive: ring; radiusInner: 0.012; radiusOuter: 0.022"
+        material="color: #00ffcc; opacity: 0.6; shader: flat">
       </a-entity>
 
-      <!-- In-VR debug panel (floats in view) -->
-      <a-entity id="vr-debug-panel" position="-0.35 -0.25 -0.8">
-        <a-plane
-          width="0.5" height="0.28"
-          material="color: #000000; opacity: 0.75; shader: flat; transparent: true">
+      <!-- In-VR debug HUD: bottom-left of view, always visible -->
+      <a-entity position="-0.38 -0.28 -0.7">
+        <a-plane width="0.55" height="0.24"
+          material="color: #000010; opacity: 0.8; shader: flat; transparent: true">
         </a-plane>
         <a-text id="vr-debug-text"
-          value="Initializing..."
-          color="#00ffcc"
-          width="0.9"
-          align="left"
-          anchor="left"
-          position="-0.23 0.08 0.01"
-          wrap-count="28"
-          font="mozillavr">
+          value="Waiting..."
+          color="#00ffcc" width="0.9" align="left" anchor="left"
+          position="-0.26 0.08 0.005" wrap-count="32" font="mozillavr">
         </a-text>
-        <a-text id="vr-step-flash"
-          value=""
-          color="#ffffff"
-          width="1.2"
-          align="center"
-          position="0 -0.1 0.01"
-          font="mozillavr">
+        <a-text id="vr-step-text" value=""
+          color="#ffffff" width="1.1" align="center"
+          position="0 -0.08 0.005" font="mozillavr">
         </a-text>
       </a-entity>
     </a-camera>
   </a-entity>
 
-  <!-- Track container - we move this backward to simulate forward movement -->
-  <a-entity id="track-container" position="0 0 0">
-    <!-- Track segments spawned here by JS -->
-  </a-entity>
+  <a-entity id="track-container"></a-entity>
 
-  <!-- Ambient + directional light -->
   <a-light type="ambient" color="#001122" intensity="0.5"></a-light>
   <a-light type="directional" color="#00ffcc" intensity="0.3" position="0 5 -5"></a-light>
-
-  <!-- Neon glow fog plane at ground -->
-  <a-plane
-    position="0 0 -50"
-    rotation="-90 0 0"
-    width="20" height="200"
-    material="color: #000822; shader: flat; opacity: 0.95"
-    visible="true">
-  </a-plane>
 
 </a-scene>
 
 <script>
 // ============================================================
+//  CONSTANTS
+// ============================================================
+const SEG_LEN   = 10;
+const SEG_COUNT = 14;
+const TW        = 6;      // track width
+const TH        = 3.5;    // track height
+const LANE_W    = 1.5;
+
+// Bob detection tuning
+const BOB_EXCURSION  = 0.018; // metres peak-to-valley needed for a step (~1.8cm)
+const BOB_ALPHA      = 0.3;   // EMA smoothing (lower = smoother but more lag)
+const DIR_CONFIRM    = 4;     // frames needed to confirm a direction change
+const BOB_COOLDOWN_S = 0.22;  // min seconds between registered steps
+
+// Movement
+const BOOST_PER_STEP = 14;    // speed units added per step
+const BOOST_DECAY    = 7;     // speed units lost per second
+
+// ============================================================
 //  GAME STATE
 // ============================================================
-const LANE_WIDTH = 1.4;       // half-width of lane offset (3 lanes: -LANE_WIDTH, 0, LANE_WIDTH)
-const SEGMENT_LENGTH = 10;    // Z length of each track segment
-const SEGMENT_COUNT = 12;     // how many segments ahead
-const TRACK_WIDTH = 6;
-const TRACK_HEIGHT = 3.5;
-
 let gameActive = false;
-let gameOver = false;
-let score = 0;
-let baseSpeed = 5;            // constant forward speed (units/sec)
-let stepBoost = 0;            // extra speed burst from head-bob steps
-let trackZ = 0;               // total distance traveled (track moves in -Z direction)
-let segments = [];            // array of { entity, z, hasObstacle }
-let obstacles = [];           // obstacle entities
+let gameOver   = false;
 
-// Head bob detection
-let lastHeadY = null;
-let headYHistory = [];
-let bobPhase = 'idle';
-let bobThreshold = 0.015;
+let trackZ    = 0;
+let playerX   = 0;
+let distance  = 0;
+let stepBoost = 0;
+let speedCap  = 14;
+
+let segments  = [];
+let obstacles = [];
+
+// Bob detector
+let smoothY    = null;
+let prevSmooth = null;
+let peakY      = null;
+let valleyY    = null;
+let bobDir     = 0;    // confirmed direction: 1=up, -1=down, 0=unknown
+let dirCount   = 0;    // running confirmation counter
 let bobCooldown = 0;
 let totalSteps = 0;
-let bobDisplay = 0;
 
-// Keyboard fallback
-let keys = {};
-let kbBobTimer = 0;
+// Keyboard
+let keys   = {};
+let kbTimer = 0;
 
-// Lateral steer
-let playerLaneX = 0;          // actual X offset of camera rig
-
-// Scoring
-let distanceTraveled = 0;
+// Loop
+let lastTime = null;
 
 // ============================================================
 //  INIT
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
-  document.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-  document.addEventListener('keyup',   e => { keys[e.key.toLowerCase()] = false; });
-
-  const scene = document.getElementById('scene');
-  scene.addEventListener('loaded', () => {
-    buildInitialTrack();
-  });
+  document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+  document.addEventListener('keyup',   e => keys[e.key.toLowerCase()] = false);
+  document.getElementById('scene').addEventListener('loaded', buildTrack);
 });
 
-function buildInitialTrack() {
-  for (let i = 0; i < SEGMENT_COUNT; i++) {
-    spawnSegment(i * SEGMENT_LENGTH);
-  }
+function buildTrack() {
+  for (let i = 0; i < SEG_COUNT; i++) spawnSegment(i * SEG_LEN);
 }
 
 // ============================================================
 //  TRACK GENERATION
 // ============================================================
-function spawnSegment(zOffset) {
-  const container = document.getElementById('track-container');
+function spawnSegment(z) {
+  const el = document.createElement('a-entity');
+  el.setAttribute('position', `0 0 -${z}`);
 
-  const seg = document.createElement('a-entity');
-  // Segments are placed ahead of the player in -Z (into screen)
-  seg.setAttribute('position', `0 0 -${zOffset}`);
+  makePlane(el, 0,     0,      -SEG_LEN/2, TW,     SEG_LEN, '-90 0 0', '#001133', '#000511');
+  makePlane(el, -TW/2, TH/2,   -SEG_LEN/2, SEG_LEN, TH, '0 90 0',  '#000a22', '#001133');
+  makePlane(el,  TW/2, TH/2,   -SEG_LEN/2, SEG_LEN, TH, '0 -90 0', '#000a22', '#001133');
+  makePlane(el, 0,     TH,     -SEG_LEN/2, TW,     SEG_LEN, '90 0 0',  '#000822', '#000a1a');
 
-  // Floor
-  const floor = document.createElement('a-plane');
-  floor.setAttribute('rotation', '-90 0 0');
-  floor.setAttribute('width', TRACK_WIDTH);
-  floor.setAttribute('height', SEGMENT_LENGTH);
-  floor.setAttribute('position', `0 0 -${SEGMENT_LENGTH / 2}`);
-  floor.setAttribute('material', `color: #001133; metalness: 0.8; roughness: 0.3; emissive: #000511; emissiveIntensity: 0.3`);
-  seg.appendChild(floor);
+  makeStrip(el, -TW/2+0.05, 0.05,    '#00ffcc');
+  makeStrip(el,  TW/2-0.05, 0.05,    '#00ffcc');
+  makeStrip(el, -TW/2+0.05, TH-0.05, '#0066ff');
+  makeStrip(el,  TW/2-0.05, TH-0.05, '#0066ff');
 
-  // Left wall
-  const wallL = document.createElement('a-plane');
-  wallL.setAttribute('rotation', '0 90 0');
-  wallL.setAttribute('width', SEGMENT_LENGTH);
-  wallL.setAttribute('height', TRACK_HEIGHT);
-  wallL.setAttribute('position', `${-TRACK_WIDTH/2} ${TRACK_HEIGHT/2} -${SEGMENT_LENGTH/2}`);
-  wallL.setAttribute('material', `color: #000a22; emissive: #001133; emissiveIntensity: 0.5`);
-  seg.appendChild(wallL);
+  if (z > 30 && Math.random() < 0.7) spawnObstacle(el, z);
 
-  // Right wall
-  const wallR = document.createElement('a-plane');
-  wallR.setAttribute('rotation', '0 -90 0');
-  wallR.setAttribute('width', SEGMENT_LENGTH);
-  wallR.setAttribute('height', TRACK_HEIGHT);
-  wallR.setAttribute('position', `${TRACK_WIDTH/2} ${TRACK_HEIGHT/2} -${SEGMENT_LENGTH/2}`);
-  wallR.setAttribute('material', `color: #000a22; emissive: #001133; emissiveIntensity: 0.5`);
-  seg.appendChild(wallR);
-
-  // Ceiling
-  const ceil = document.createElement('a-plane');
-  ceil.setAttribute('rotation', '90 0 0');
-  ceil.setAttribute('width', TRACK_WIDTH);
-  ceil.setAttribute('height', SEGMENT_LENGTH);
-  ceil.setAttribute('position', `0 ${TRACK_HEIGHT} -${SEGMENT_LENGTH/2}`);
-  ceil.setAttribute('material', `color: #000822; emissive: #000a1a; emissiveIntensity: 0.3`);
-  seg.appendChild(ceil);
-
-  // Neon edge strips
-  spawnNeonStrip(seg, -TRACK_WIDTH/2 + 0.05, 0.05, '#00ffcc');
-  spawnNeonStrip(seg,  TRACK_WIDTH/2 - 0.05, 0.05, '#00ffcc');
-  spawnNeonStrip(seg, -TRACK_WIDTH/2 + 0.05, TRACK_HEIGHT - 0.05, '#0088ff');
-  spawnNeonStrip(seg,  TRACK_WIDTH/2 - 0.05, TRACK_HEIGHT - 0.05, '#0088ff');
-
-  // Obstacle (skip first 3 segments = grace zone)
-  let hasObstacle = false;
-  if (zOffset > 25 && Math.random() < 0.65) {
-    hasObstacle = true;
-    spawnObstacle(seg);
-  }
-
-  container.appendChild(seg);
-
-  const segData = { entity: seg, z: zOffset, hasObstacle };
-  segments.push(segData);
+  document.getElementById('track-container').appendChild(el);
+  segments.push({ el, z });
 }
 
-function spawnNeonStrip(parent, x, y, color) {
-  const strip = document.createElement('a-box');
-  strip.setAttribute('position', `${x} ${y} -${SEGMENT_LENGTH/2}`);
-  strip.setAttribute('width', 0.04);
-  strip.setAttribute('height', 0.04);
-  strip.setAttribute('depth', SEGMENT_LENGTH);
-  strip.setAttribute('material', `color: ${color}; emissive: ${color}; emissiveIntensity: 1; shader: flat`);
-  parent.appendChild(strip);
+function makePlane(p, x, y, z, w, h, rot, color, emissive) {
+  const el = document.createElement('a-plane');
+  el.setAttribute('position', `${x} ${y} ${z}`);
+  el.setAttribute('rotation', rot);
+  el.setAttribute('width', w);
+  el.setAttribute('height', h);
+  el.setAttribute('material', `color:${color};emissive:${emissive};emissiveIntensity:0.4;roughness:0.7`);
+  p.appendChild(el);
 }
 
-function spawnObstacle(parent) {
-  const types = ['wall-gap', 'pillar', 'low-bar', 'high-bar'];
-  const type = types[Math.floor(Math.random() * types.length)];
+function makeStrip(p, x, y, color) {
+  const el = document.createElement('a-box');
+  el.setAttribute('position', `${x} ${y} -${SEG_LEN/2}`);
+  el.setAttribute('width', 0.05); el.setAttribute('height', 0.05); el.setAttribute('depth', SEG_LEN);
+  el.setAttribute('material', `color:${color};emissive:${color};emissiveIntensity:1;shader:flat`);
+  p.appendChild(el);
+}
 
-  // Place obstacle within the segment at a random depth (negative Z = into screen)
-  const localZ = -(SEGMENT_LENGTH * 0.3 + Math.random() * SEGMENT_LENGTH * 0.5);
+function spawnObstacle(parent, segZ) {
+  const type = Math.floor(Math.random() * 4);
+  const lz = -(SEG_LEN * 0.25 + Math.random() * SEG_LEN * 0.5);
 
-  if (type === 'wall-gap') {
-    const gapSide = Math.random() < 0.5 ? 'left' : 'right';
-    const gapWidth = 2.2;
-    if (gapSide === 'left') {
-      makeObstacleBox(parent, TRACK_WIDTH/4, TRACK_HEIGHT/2, localZ, TRACK_WIDTH/2 - gapWidth/2, TRACK_HEIGHT, 0.4, '#ff2244', '#ff4466');
-    } else {
-      makeObstacleBox(parent, -TRACK_WIDTH/4, TRACK_HEIGHT/2, localZ, TRACK_WIDTH/2 - gapWidth/2, TRACK_HEIGHT, 0.4, '#ff2244', '#ff4466');
-    }
-  } else if (type === 'pillar') {
-    const laneX = (Math.floor(Math.random() * 3) - 1) * LANE_WIDTH;
-    makeObstacleBox(parent, laneX, TRACK_HEIGHT/2, localZ, 1.0, TRACK_HEIGHT, 1.0, '#ff6600', '#ff8800');
-  } else if (type === 'low-bar') {
-    makeObstacleBox(parent, 0, 0.5, localZ, TRACK_WIDTH - 0.4, 0.5, 0.4, '#aa00ff', '#cc44ff');
-  } else if (type === 'high-bar') {
-    makeObstacleBox(parent, 0, TRACK_HEIGHT - 0.5, localZ, TRACK_WIDTH - 0.4, 0.5, 0.4, '#0088ff', '#44aaff');
+  if (type === 0) {
+    const right = Math.random() < 0.5;
+    makeObstacle(parent, segZ, right ? TW/4 : -TW/4, TH/2, lz, TW/2-0.9, TH, 0.5, '#ff2244', '#ff4466');
+  } else if (type === 1) {
+    const lx = (Math.floor(Math.random() * 3) - 1) * LANE_W;
+    makeObstacle(parent, segZ, lx, TH/2, lz, 1.1, TH, 1.1, '#ff6600', '#ff8800');
+  } else if (type === 2) {
+    makeObstacle(parent, segZ, 0, 0.5, lz, TW-0.5, 0.6, 0.5, '#aa00ff', '#cc44ff');
+  } else {
+    makeObstacle(parent, segZ, 0, TH-0.5, lz, TW-0.5, 0.6, 0.5, '#0088ff', '#44aaff');
   }
 }
 
-function makeObstacleBox(parent, x, y, z, w, h, d, color, emissive) {
-  const box = document.createElement('a-box');
-  box.setAttribute('position', `${x} ${y} ${z}`);
-  box.setAttribute('width', w);
-  box.setAttribute('height', h);
-  box.setAttribute('depth', d);
-  box.setAttribute('material', `color: ${color}; emissive: ${emissive}; emissiveIntensity: 0.8; transparent: true; opacity: 0.9`);
-  box.classList.add('obstacle');
-  parent.appendChild(box);
-  obstacles.push({
-    entity: box,
-    parentSeg: parent,
-    localZ: z,
-    worldX: x,
-    halfW: w / 2,
-    minY: y - h / 2,
-    maxY: y + h / 2,
-  });
+function makeObstacle(parent, segZ, x, y, lz, w, h, d, color, emissive) {
+  const el = document.createElement('a-box');
+  el.setAttribute('position', `${x} ${y} ${lz}`);
+  el.setAttribute('width', w); el.setAttribute('height', h); el.setAttribute('depth', d);
+  el.setAttribute('material', `color:${color};emissive:${emissive};emissiveIntensity:0.85;transparent:true;opacity:0.92`);
+  parent.appendChild(el);
+  obstacles.push({ parent, segZ, lz, x, y, hw: w/2, hh: h/2 });
 }
 
 // ============================================================
-//  GAME LOOP
+//  GAME CONTROL
 // ============================================================
-let lastTime = null;
-
 function startGame() {
   document.getElementById('ui-overlay').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   document.getElementById('bob-meter').classList.remove('hidden');
-  gameActive = true;
-  gameOver = false;
-  score = 0;
-  distanceTraveled = 0;
-  baseSpeed = 10;
-  stepBoost = 0;
-  totalSteps = 0;
-  trackZ = 0;
-  playerLaneX = 0;
-  lastTime = null;
-  // Reset bob detector
-  headPeak = null;
-  headValley = null;
-  headYSmooth = null;
-  prevSmooth = null;
-  dirConfirm = 0;
-  lastDir = 0;
-  bobCooldown = 0;
-  stepFlash = 0;
+  document.getElementById('start-screen').style.display = 'block';
 
-  // Reset track
+  gameActive = true; gameOver = false;
+  trackZ = 0; playerX = 0; distance = 0;
+  stepBoost = 0; speedCap = 14;
+  totalSteps = 0; lastTime = null; kbTimer = 0;
+
+  // Reset bob state
+  smoothY = null; prevSmooth = null;
+  peakY = null; valleyY = null;
+  bobDir = 0; dirCount = 0; bobCooldown = 0;
+
   const container = document.getElementById('track-container');
   while (container.firstChild) container.removeChild(container.firstChild);
-  segments = [];
-  obstacles = [];
-  buildInitialTrack();
+  segments = []; obstacles = [];
+  buildTrack();
 
-  // Reset rig
-  const rig = document.getElementById('rig');
-  rig.setAttribute('position', '0 0 0');
-
+  document.getElementById('rig').setAttribute('position', '0 0 0');
   requestAnimationFrame(gameLoop);
 }
 
@@ -591,285 +319,198 @@ function restartGame() {
   startGame();
 }
 
-function gameLoop(timestamp) {
+function endGame() {
+  if (gameOver) return;
+  gameOver = true; gameActive = false;
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('bob-meter').classList.add('hidden');
+  document.getElementById('final-score').textContent = 'DISTANCE: ' + Math.floor(distance) + 'm';
+  document.getElementById('ui-overlay').classList.remove('hidden');
+  document.getElementById('game-over-screen').classList.add('visible');
+  document.getElementById('start-screen').style.display = 'none';
+}
+
+// ============================================================
+//  MAIN LOOP
+// ============================================================
+function gameLoop(ts) {
   if (!gameActive) return;
-  if (lastTime === null) lastTime = timestamp;
-  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
-  lastTime = timestamp;
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
 
+  // Head bob from camera world position
   const cam = document.getElementById('head-cam');
-  const rigEl = document.getElementById('rig');
+  if (cam && cam.object3D) {
+    const wp = new THREE.Vector3();
+    cam.object3D.getWorldPosition(wp);
+    detectBob(wp.y, dt);
+  }
 
-  // --- HEAD BOB DETECTION (VR) ---
-  const camWorldPos = new THREE.Vector3();
-  cam.object3D.getWorldPosition(camWorldPos);
-  detectBob(camWorldPos.y, dt);
+  // Keyboard steps
+  handleKeys(dt);
 
-  // --- KEYBOARD FALLBACK ---
-  handleKeyboard(dt);
+  // Cooldown tick
+  if (bobCooldown > 0) bobCooldown -= dt;
 
-  // --- LATERAL STEERING ---
-  // Keyboard A/D steering
-  let kbSteer = 0;
-  if (keys['a'] || keys['arrowleft'])  kbSteer = -1;
-  if (keys['d'] || keys['arrowright']) kbSteer =  1;
+  // Steering
+  let steer = 0;
+  if (keys['a'] || keys['arrowleft'])  steer = -1;
+  if (keys['d'] || keys['arrowright']) steer =  1;
+  if (steer === 0 && cam && cam.object3D) {
+    const dir = new THREE.Vector3();
+    cam.object3D.getWorldDirection(dir);
+    steer = Math.max(-1, Math.min(1, dir.x * 2.2));
+  }
+  playerX = Math.max(-TW/2+0.6, Math.min(TW/2-0.6, playerX + steer * 4 * dt));
+  document.getElementById('rig').setAttribute('position', `${playerX} 0 0`);
 
-  // Head look-direction steering (works in VR and mouse-look)
-  const headDir = new THREE.Vector3();
-  cam.object3D.getWorldDirection(headDir);
-  const lookSteer = Math.max(-1, Math.min(1, headDir.x * 2.0));
+  // Forward movement — bob-driven only
+  trackZ   += stepBoost * dt;
+  distance += stepBoost * dt;
+  stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
+  speedCap  = Math.min(30, 14 + distance * 0.006);
 
-  // Combine: keyboard takes priority if pressed, else use head direction
-  const effectiveSteer = (kbSteer !== 0) ? kbSteer : lookSteer;
-  playerLaneX += effectiveSteer * 4 * dt;
-  playerLaneX = Math.max(-TRACK_WIDTH / 2 + 0.6, Math.min(TRACK_WIDTH / 2 - 0.6, playerLaneX));
-  rigEl.setAttribute('position', `${playerLaneX} 0 0`);
+  document.getElementById('track-container').setAttribute('position', `0 0 ${trackZ}`);
 
-  // --- FORWARD MOVEMENT ---
-  // Only move when stepBoost is active (earned by bobbing/walking)
-  const currentSpeed = stepBoost;
-  const forwardDelta = currentSpeed * dt;
-  trackZ += forwardDelta;
-  distanceTraveled += forwardDelta;
+  // Segment recycling
+  const farthest = segments.reduce((m, s) => Math.max(m, s.z), 0);
+  while (segments.length < SEG_COUNT) spawnSegment(farthest + SEG_LEN);
+  for (let i = segments.length - 1; i >= 0; i--) {
+    if (trackZ - segments[i].z > SEG_LEN * 1.5) {
+      segments[i].el.parentNode.removeChild(segments[i].el);
+      obstacles = obstacles.filter(o => o.parent !== segments[i].el);
+      segments.splice(i, 1);
+    }
+  }
 
-  // Decay step boost — decays quickly so you must keep walking
-  stepBoost = Math.max(0, stepBoost - dt * 6);
+  // Collision
+  checkCollision();
 
-  // Speed ramp: max step boost increases over distance
-  baseSpeed = 10 + distanceTraveled * 0.005;
-  baseSpeed = Math.min(baseSpeed, 25);
-
-  // Move track: segments are at -Z, we shift container in +Z so they approach the player
-  const trackContainer = document.getElementById('track-container');
-  trackContainer.setAttribute('position', `0 0 ${trackZ}`);
-
-  // --- OBSTACLE COLLISION ---
-  checkCollision(rigEl);
-
-  // --- SEGMENT MANAGEMENT ---
-  manageSegments();
-
-  // --- HUD UPDATE ---
-  score = Math.floor(distanceTraveled);
-  document.getElementById('score-display').textContent = score + 'm';
-  document.getElementById('speed-display').textContent = stepBoost > 0 ? (stepBoost / 10).toFixed(1) + 'x' : 'STOP';
-
-  // Bob meter
-  const meterPct = Math.min(100, (bobDisplay / bobThreshold) * 100);
-  document.getElementById('meter-fill').style.width = meterPct + '%';
-  bobDisplay = Math.max(0, bobDisplay - dt * 0.1);
+  // HUD
+  document.getElementById('score-display').textContent = Math.floor(distance) + 'm';
+  document.getElementById('speed-display').textContent =
+    stepBoost > 0.5 ? Math.round(stepBoost / BOOST_PER_STEP * 100) + '%' : 'STOP';
+  document.getElementById('meter-fill').style.width =
+    Math.min(100, stepBoost / speedCap * 100) + '%';
 
   requestAnimationFrame(gameLoop);
 }
 
 // ============================================================
-//  HEAD BOB DETECTION — peak/valley tracker
+//  HEAD BOB DETECTOR
+//
+//  Strategy: exponential smoothing on raw Y, then track direction
+//  using a confirmation counter (avoids single-frame noise triggering).
+//  When direction flips from DOWN→UP and the peak-to-valley distance
+//  exceeds BOB_EXCURSION, register a step.
 // ============================================================
-
-// We track a running peak (local max) and valley (local min).
-// When head reverses direction after dropping BOB_MIN_EXCURSION meters,
-// we count a step. This is robust to Quest 3's 72/90Hz tracking.
-
-const BOB_MIN_EXCURSION = 0.02; // 2cm vertical travel = one step (tune down if needed)
-const BOB_DIRECTION_SMOOTHING = 8; // frames to confirm direction reversal
-
-let headPeak = null;       // highest Y seen in current upswing
-let headValley = null;     // lowest Y seen in current downswing
-let headYSmooth = null;    // exponentially smoothed head Y
-let prevSmooth = null;
-let dirConfirm = 0;        // positive = confirming upward, negative = confirming downward
-let lastDir = 0;           // 1 = going up, -1 = going down
-let stepFlash = 0;         // for visual feedback
-
 function detectBob(rawY, dt) {
-  // Exponential smoothing to remove jitter but keep real motion
-  if (headYSmooth === null) { headYSmooth = rawY; prevSmooth = rawY; headPeak = rawY; headValley = rawY; return; }
-  headYSmooth += (rawY - headYSmooth) * 0.4;
+  if (smoothY === null) {
+    smoothY = rawY; prevSmooth = rawY;
+    peakY = rawY; valleyY = rawY; bobDir = 0; dirCount = 0;
+    setVRDebug('Ready — bob your head!');
+    return;
+  }
 
-  const dy = headYSmooth - prevSmooth;
-  prevSmooth = headYSmooth;
+  // EMA smoothing
+  smoothY += (rawY - smoothY) * BOB_ALPHA;
+  const dy = smoothY - prevSmooth;
+  prevSmooth = smoothY;
 
-  // Direction confirmation: accumulate direction signal
-  dirConfirm += dy > 0 ? 1 : dy < 0 ? -1 : 0;
-  dirConfirm = Math.max(-BOB_DIRECTION_SMOOTHING, Math.min(BOB_DIRECTION_SMOOTHING, dirConfirm));
+  // Direction confirmation counter
+  if (dy > 0.00005)       dirCount = Math.min(dirCount + 1,  DIR_CONFIRM + 4);
+  else if (dy < -0.00005) dirCount = Math.max(dirCount - 1, -(DIR_CONFIRM + 4));
 
-  const newDir = dirConfirm >= 3 ? 1 : dirConfirm <= -3 ? -1 : lastDir;
+  const confirmedDir =
+    dirCount >=  DIR_CONFIRM ?  1 :
+    dirCount <= -DIR_CONFIRM ? -1 :
+    bobDir; // hold last confirmed direction
 
-  if (newDir !== lastDir) {
-    // Direction changed
-    if (lastDir === 1 && newDir === -1) {
-      // Was going up, now going down → record peak
-      headPeak = headYSmooth;
+  if (confirmedDir !== bobDir) {
+    if (confirmedDir === -1) {
+      // Just started going DOWN — record peak
+      peakY = smoothY;
     }
-    if (lastDir === -1 && newDir === 1) {
-      // Was going down, now going up → record valley, check excursion
-      headValley = headYSmooth;
-      if (headPeak !== null) {
-        const excursion = headPeak - headValley;
-        if (excursion >= BOB_MIN_EXCURSION && bobCooldown <= 0) {
-          registerStep();
-          bobCooldown = 0.25;
-          stepFlash = 0.15;
-        }
+    if (confirmedDir === 1 && bobDir === -1) {
+      // Just switched from DOWN to UP — record valley & check excursion
+      valleyY = smoothY;
+      const excursion = (peakY ?? smoothY) - valleyY;
+      if (excursion >= BOB_EXCURSION && bobCooldown <= 0) {
+        registerStep(excursion);
       }
-      headPeak = headYSmooth; // reset for next cycle
+      peakY = smoothY; // reset for next cycle
     }
-    lastDir = newDir;
+    bobDir = confirmedDir;
   }
 
-  // Track running peak/valley within current direction
-  if (lastDir === 1 && headYSmooth > (headPeak ?? headYSmooth)) headPeak = headYSmooth;
-  if (lastDir === -1 && headYSmooth < (headValley ?? headYSmooth)) headValley = headYSmooth;
+  // Continuously update running peak/valley
+  if (bobDir === 1  && smoothY > (peakY   ?? -Infinity)) peakY   = smoothY;
+  if (bobDir === -1 && smoothY < (valleyY ??  Infinity)) valleyY = smoothY;
 
-  if (bobCooldown > 0) bobCooldown -= dt;
-  if (stepFlash > 0) stepFlash -= dt;
-
-  // Update excursion display for meter
-  bobDisplay = headPeak !== null && headValley !== null ? Math.abs(headPeak - headYSmooth) / BOB_MIN_EXCURSION : 0;
-
-  // Update in-scene debug text
-  updateDebugHUD(rawY, dy);
+  // VR debug overlay
+  const curExc = (peakY !== null && valleyY !== null)
+    ? Math.abs((bobDir === -1 ? (peakY - smoothY) : (smoothY - valleyY))).toFixed(3)
+    : '?';
+  setVRDebug(
+    `Y raw:  ${rawY.toFixed(3)}\n` +
+    `Y smth: ${smoothY.toFixed(3)}\n` +
+    `Excur:  ${curExc} / ${BOB_EXCURSION}\n` +
+    `Dir: ${bobDir > 0 ? '↑UP' : bobDir < 0 ? '↓DN' : '--'}  Steps: ${totalSteps}`
+  );
 }
 
-function updateDebugHUD(rawY, dy) {
-  const el = document.getElementById('debug-y');
-  if (el) el.textContent = rawY.toFixed(3);
-  const el2 = document.getElementById('debug-bob');
-  if (el2) el2.textContent = (headPeak !== null && headValley !== null ? (headPeak - (headValley ?? headYSmooth)).toFixed(3) : '---');
-  const el3 = document.getElementById('debug-steps');
-  if (el3) el3.textContent = totalSteps;
-
-  // Flash step meter on step
-  const fill = document.getElementById('meter-fill');
-  if (fill) {
-    if (stepFlash > 0) {
-      fill.style.background = 'linear-gradient(90deg, #ffffff, #00ffcc)';
-    } else {
-      fill.style.background = 'linear-gradient(90deg, #00ffcc, #00ff88)';
-    }
-  }
-
-  // Update in-VR debug text entity if present
-  const vrDbg = document.getElementById('vr-debug-text');
-  if (vrDbg) {
-    const excursion = headPeak !== null && headValley !== null ? (headPeak - headYSmooth).toFixed(3) : '?';
-    vrDbg.setAttribute('value',
-      `Y: ${rawY.toFixed(3)}\nExcursion: ${excursion}\nThreshold: ${BOB_MIN_EXCURSION}\nSteps: ${totalSteps}\nDir: ${lastDir > 0 ? 'UP' : lastDir < 0 ? 'DOWN' : '---'}`
-    );
-  }
-}
-
-function registerStep() {
+function registerStep(excursion) {
   totalSteps++;
-  stepBoost = Math.min(stepBoost + baseSpeed, baseSpeed * 1.5);
+  bobCooldown = BOB_COOLDOWN_S;
 
-  // Flash in-VR step indicator
-  const flashEl = document.getElementById('vr-step-flash');
+  const boost = Math.min(BOOST_PER_STEP * (1 + excursion * 3), BOOST_PER_STEP * 1.5);
+  stepBoost = Math.min(stepBoost + boost, speedCap);
+
+  const flashEl = document.getElementById('vr-step-text');
   if (flashEl) {
-    flashEl.setAttribute('value', '✓ STEP');
-    setTimeout(() => flashEl.setAttribute('value', ''), 200);
+    flashEl.setAttribute('value', '✓ STEP!');
+    setTimeout(() => { if (flashEl) flashEl.setAttribute('value', ''); }, 280);
   }
+}
+
+function setVRDebug(msg) {
+  const el = document.getElementById('vr-debug-text');
+  if (el) el.setAttribute('value', msg);
 }
 
 // ============================================================
 //  KEYBOARD FALLBACK
 // ============================================================
-function handleKeyboard(dt) {
+function handleKeys(dt) {
   if (keys['w'] || keys['arrowup']) {
-    kbBobTimer += dt;
-    if (kbBobTimer > 0.35) {
-      kbBobTimer = 0;
-      registerStep();
+    kbTimer += dt;
+    if (kbTimer >= 0.35) {
+      kbTimer = 0;
+      registerStep(BOB_EXCURSION * 2);
     }
   } else {
-    kbBobTimer = 0;
+    kbTimer = 0;
   }
 }
 
 // ============================================================
-//  COLLISION DETECTION
+//  COLLISION
 // ============================================================
-function checkCollision(rigEl) {
-  // Player world X position
-  const px = playerLaneX;
-  // Camera height is fixed at 1.6 in the rig
-  const playerMinY = 0.8;
-  const playerMaxY = 1.9;
-  const playerMinX = px - 0.35;
-  const playerMaxX = px + 0.35;
-
-  // Player is always at world Z=0. Obstacles move toward Z=0 via trackZ offset.
-  // Obstacle world Z = (segBaseZ_in_track_space) + trackZ
-  // segBaseZ_in_track_space = -seg.z (segments are placed at negative Z in track container)
-  // So obstacle world Z = trackZ - seg.z + obs.localZ
+function checkCollision() {
+  const pMinX = playerX - 0.4, pMaxX = playerX + 0.4;
+  const pMinY = 0.7, pMaxY = 1.95;
 
   for (const obs of obstacles) {
-    // Find which segment this obstacle belongs to
-    const seg = segments.find(s => s.entity === obs.parentSeg);
-    if (!seg) continue;
+    // Obstacle world Z = container offset - segment Z + local Z within segment
+    const wz = trackZ - obs.segZ + obs.lz;
+    if (wz < -1.5 || wz > 1.5) continue;
 
-    // Obstacle world Z = trackZ (container offset) + (-seg.z) (segment position) + localZ (obstacle within seg)
-    // localZ is already negative so this brings the obstacle closer to Z=0 as trackZ increases
-    const obsWorldZ = trackZ - seg.z + obs.localZ;
-
-    // Only check obstacles near the player (within ±2 units of Z=0)
-    if (obsWorldZ < -2 || obsWorldZ > 2) continue;
-
-    const obsX = obs.worldX;
-    const obsHalfW = obs.halfW;
-    const obsMinY = obs.minY;
-    const obsMaxY = obs.maxY;
-
-    const hitX = playerMaxX > obsX - obsHalfW && playerMinX < obsX + obsHalfW;
-    const hitY = playerMaxY > obsMinY && playerMinY < obsMaxY;
-
-    if (hitX && hitY) {
-      triggerGameOver();
-      return;
-    }
+    const hitX = pMaxX > obs.x - obs.hw && pMinX < obs.x + obs.hw;
+    const hitY = pMaxY > obs.y - obs.hh && pMinY < obs.y + obs.hh;
+    if (hitX && hitY) { endGame(); return; }
   }
-}
-
-// ============================================================
-//  SEGMENT MANAGEMENT
-// ============================================================
-function manageSegments() {
-  // A segment's world Z = trackZ - seg.z (since segment is at -seg.z in container, container is at +trackZ)
-  // When worldZ > SEGMENT_LENGTH, it's fully behind the player → cull it
-  for (let i = segments.length - 1; i >= 0; i--) {
-    const seg = segments[i];
-    const worldZ = trackZ - seg.z;
-    if (worldZ > SEGMENT_LENGTH) {
-      seg.entity.parentNode.removeChild(seg.entity);
-      obstacles = obstacles.filter(o => o.parentSeg !== seg.entity);
-      segments.splice(i, 1);
-    }
-  }
-
-  // Spawn new segments ahead (most negative Z)
-  const farthestZ = segments.reduce((m, s) => Math.max(m, s.z), 0);
-  while (segments.length < SEGMENT_COUNT) {
-    spawnSegment(farthestZ + SEGMENT_LENGTH);
-  }
-}
-
-// ============================================================
-//  GAME OVER
-// ============================================================
-function triggerGameOver() {
-  if (gameOver) return;
-  gameOver = true;
-  gameActive = false;
-
-  document.getElementById('hud').classList.add('hidden');
-  document.getElementById('bob-meter').classList.add('hidden');
-
-  document.getElementById('final-score').textContent = 'DISTANCE: ' + score + 'm';
-  document.getElementById('ui-overlay').classList.remove('hidden');
-  document.getElementById('game-over-screen').classList.add('visible');
-  document.getElementById('start-screen').style.display = 'none';
 }
 </script>
-
 </body>
 </html>
