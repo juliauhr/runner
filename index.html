@@ -438,6 +438,153 @@ document.addEventListener('mousemove', e => {
   }
 });
 
+// ─── PROCEDURAL MUSIC ────────────────────────────────────────
+// Web Audio API step-synced generative music.
+// BPM tracks the player's bob pace — faster walking = faster beat.
+
+let audioCtx    = null;
+let masterGain  = null;
+let musicActive = false;
+
+let currentBPM    = 80;
+const MIN_BPM     = 70;
+const MAX_BPM     = 160;
+const BPM_PER_STEP = 8;
+const BPM_DECAY   = 12;
+
+let nextBeatTime   = 0;
+let beatIndex      = 0;
+const SCHEDULE_AHEAD = 0.12;
+let schedulerTimer = null;
+
+const kickPat  = [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0];
+const snarePat = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
+const hihatPat = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0];
+const openHat  = [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1];
+const bassPat  = [0,0,12,0, 0,0,7,0, 0,0,10,0, 0,0,5,0];
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx   = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+  masterGain.connect(audioCtx.destination);
+}
+
+function startMusic() {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  musicActive  = true;
+  beatIndex    = 0;
+  nextBeatTime = audioCtx.currentTime + 0.1;
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 1.5);
+  schedulerTimer = setInterval(scheduleBeats, 50);
+}
+
+function stopMusic() {
+  musicActive = false;
+  clearInterval(schedulerTimer);
+  if (!masterGain) return;
+  masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, audioCtx.currentTime);
+  masterGain.gain.linearRampToValueAtTime(0.0, audioCtx.currentTime + 1.2);
+}
+
+function scheduleBeats() {
+  if (!musicActive || !audioCtx) return;
+  const stepDur = 60 / currentBPM / 4;
+  const lookahead = audioCtx.currentTime + SCHEDULE_AHEAD;
+  while (nextBeatTime < lookahead) {
+    const t = nextBeatTime;
+    const i = beatIndex % 16;
+    if (kickPat[i])  scheduleKick(t);
+    if (snarePat[i]) scheduleSnare(t);
+    if (hihatPat[i]) scheduleHihat(t, false);
+    if (openHat[i])  scheduleHihat(t, true);
+    if (bassPat[i])  scheduleBass(t, bassPat[i]);
+    nextBeatTime += stepDur;
+    beatIndex++;
+  }
+}
+
+function updateMusicBPM(dt) {
+  if (!musicActive) return;
+  currentBPM = Math.max(MIN_BPM, currentBPM - BPM_DECAY * dt);
+}
+
+function onStepMusic() {
+  if (!musicActive) return;
+  currentBPM = Math.min(MAX_BPM, currentBPM + BPM_PER_STEP);
+}
+
+function scheduleKick(t) {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.frequency.setValueAtTime(150, t);
+  o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+  g.gain.setValueAtTime(1.2, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  o.start(t); o.stop(t + 0.35);
+}
+
+function scheduleSnare(t) {
+  const bufSize = audioCtx.sampleRate * 0.18;
+  const buf  = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+  const src    = audioCtx.createBufferSource();
+  src.buffer   = buf;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type  = 'bandpass'; filter.frequency.value = 2200; filter.Q.value = 0.8;
+  const g = audioCtx.createGain();
+  src.connect(filter); filter.connect(g); g.connect(masterGain);
+  g.gain.setValueAtTime(0.55, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  src.start(t); src.stop(t + 0.18);
+  const o = audioCtx.createOscillator();
+  const og = audioCtx.createGain();
+  o.connect(og); og.connect(masterGain);
+  o.frequency.setValueAtTime(200, t);
+  og.gain.setValueAtTime(0.3, t);
+  og.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  o.start(t); o.stop(t + 0.1);
+}
+
+function scheduleHihat(t, open) {
+  const dur = open ? 0.25 : 0.04;
+  const bufSize = audioCtx.sampleRate * dur;
+  const buf  = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+  const src    = audioCtx.createBufferSource();
+  src.buffer   = buf;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type  = 'highpass'; filter.frequency.value = 7000;
+  const g = audioCtx.createGain();
+  src.connect(filter); filter.connect(g); g.connect(masterGain);
+  g.gain.setValueAtTime(open ? 0.18 : 0.12, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.start(t); src.stop(t + dur);
+}
+
+function scheduleBass(t, semitones) {
+  const freq = 55 * Math.pow(2, semitones / 12);
+  const o  = audioCtx.createOscillator();
+  const lp = audioCtx.createBiquadFilter();
+  const g  = audioCtx.createGain();
+  lp.type = 'lowpass'; lp.frequency.value = 400;
+  o.type  = 'sawtooth';
+  o.connect(lp); lp.connect(g); g.connect(masterGain);
+  o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0, t);
+  g.gain.linearRampToValueAtTime(0.4, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  o.start(t); o.stop(t + 0.2);
+}
+
 // ─── GAME CONTROL ────────────────────────────────────────────
 function startGame() {
   document.getElementById('overlay').classList.add('hidden');
@@ -459,11 +606,13 @@ function startGame() {
   segments = []; obstacles = [];
   rig.position.set(0, 0, 0);
   buildTrack();
+  startMusic();
 }
 
 function endGame() {
   if (gameOver) return;
   gameOver = true; gameActive = false;
+  stopMusic();
   document.getElementById('hud').classList.add('hidden');
   document.getElementById('stepmeter').classList.add('hidden');
   document.getElementById('final-dist').textContent = 'DISTANCE: ' + Math.floor(distance) + 'm';
@@ -528,6 +677,7 @@ function registerStep(excursion) {
   const boost = Math.min(BOOST_AMOUNT * (1 + excursion * 4), BOOST_AMOUNT * 1.5);
   stepBoost = Math.min(stepBoost + boost, speedCap);
   stepFlash = 0.3;
+  onStepMusic();
 }
 
 // ─── COLLISION ───────────────────────────────────────────────
@@ -607,6 +757,7 @@ renderer.setAnimationLoop((time, frame) => {
   trackZ   += stepBoost * dt;
   distance += stepBoost * dt;
   stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
+  updateMusicBPM(dt);
   speedCap  = Math.min(14, 6 + distance * 0.003);
   // Segments are at -segZ inside container. Moving container by +trackZ
   // brings them toward world Z=0 (where the player stands).
@@ -645,7 +796,7 @@ renderer.setAnimationLoop((time, frame) => {
     `Exc: ${curExc} / ${BOB_EXCURSION}`,
     `Dir: ${bobDir > 0 ? '↑ UP' : bobDir < 0 ? '↓ DN' : '-- --'}`,
     `Steps: ${totalSteps}   Cool: ${bobCooldown > 0 ? bobCooldown.toFixed(2)+'s' : 'OK'}`,
-    `Boost: ${stepBoost.toFixed(1)}`,
+    `Boost: ${stepBoost.toFixed(1)}  BPM: ${Math.round(currentBPM)}`,
   ], stepFlash > 0);
 
   renderer.render(scene, camera);
