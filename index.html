@@ -219,12 +219,12 @@ const TW        = 6;
 const TH        = 3.5;
 const LANE_W    = 1.6;
 
-const BOB_EXCURSION  = 0.015; // metres peak→valley to register step
+const BOB_EXCURSION  = 0.006; // metres peak→valley to register step (~6mm)
 const BOB_ALPHA      = 0.25;  // EMA smoothing (lower = more smoothing)
 const DIR_CONFIRM    = 5;     // frames to confirm direction change
 const BOB_COOLDOWN   = 0.20;  // seconds between steps
-const BOOST_AMOUNT   = 14;    // speed units added per step
-const BOOST_DECAY    = 6;     // speed units lost per second
+const BOOST_AMOUNT   = 6;     // speed units added per step
+const BOOST_DECAY    = 2.5;   // speed units lost per second
 
 // ─── MATERIALS ───────────────────────────────────────────────
 const matFloor   = new THREE.MeshLambertMaterial({ color: 0x001133, emissive: 0x000511 });
@@ -405,7 +405,7 @@ function startGame() {
 
   gameActive = true; gameOver = false;
   trackZ = 0; playerX = 0; distance = 0;
-  stepBoost = 0; speedCap = 14;
+  stepBoost = 0; speedCap = 6;
   totalSteps = 0; kbTimer = 0;
   smoothY = null; prevSmooth = null;
   peakY = null; valleyY = null;
@@ -565,7 +565,7 @@ renderer.setAnimationLoop((time, frame) => {
   trackZ   += stepBoost * dt;
   distance += stepBoost * dt;
   stepBoost = Math.max(0, stepBoost - BOOST_DECAY * dt);
-  speedCap  = Math.min(30, 14 + distance * 0.006);
+  speedCap  = Math.min(14, 6 + distance * 0.003);
   // Segments are at -segZ inside container. Moving container by +trackZ
   // brings them toward world Z=0 (where the player stands).
   trackContainer.position.z = trackZ;
