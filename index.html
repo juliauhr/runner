@@ -474,6 +474,52 @@ function buildTrack() {
   for (let i = 0; i < SEG_COUNT; i++) spawnSegment(i * SEG_LEN);
 }
 
+// ─── STUN OVERLAY (red plane in front of camera) ─────────────
+const stunMat   = new THREE.MeshBasicMaterial({ color: 0xff1122, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
+const stunPlane = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), stunMat);
+stunPlane.position.set(0, 0, -0.55);
+stunPlane.renderOrder = 997;
+camera.add(stunPlane);
+
+const origBgColor  = new THREE.Color(0x050510);
+const origFogColor = new THREE.Color(0x050510);
+const stunRedColor = new THREE.Color(0x3a0005);
+
+function playCollisionSound() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  // Low thud
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.frequency.setValueAtTime(90, t);
+  o.frequency.exponentialRampToValueAtTime(28, t + 0.45);
+  g.gain.setValueAtTime(1.6, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  o.start(t); o.stop(t + 0.5);
+  // Noise crunch
+  const bufSize = Math.floor(audioCtx.sampleRate * 0.25);
+  const buf  = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 700;
+  const ng = audioCtx.createGain();
+  src.connect(lp); lp.connect(ng); ng.connect(masterGain);
+  ng.gain.setValueAtTime(1.2, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  src.start(t); src.stop(t + 0.25);
+}
+
+function stunPlayer() {
+  if (stunTimer > 0 || stunCooldown > 0) return;
+  stepBoost  = 0;
+  stunTimer  = STUN_DURATION;
+  playCollisionSound();
+}
+
 // ─── IN-VR DEBUG SPRITE ──────────────────────────────────────
 // A canvas texture attached to the camera so it's always in view
 const dbgCanvas  = document.createElement('canvas');
@@ -521,6 +567,12 @@ let playerX    = 0;
 let distance   = 0;
 let stepBoost  = 0;
 let speedCap   = 14;
+
+// Stun state (VR-only collision recovery)
+const STUN_DURATION  = 1.2;  // seconds the stun lasts
+const STUN_RECOOL    = 1.5;  // seconds before you can be stunned again
+let stunTimer    = 0;
+let stunCooldown = 0;
 
 // Bob detection
 let smoothY    = null;
@@ -717,6 +769,10 @@ function startGame() {
   smoothY = null; prevSmooth = null;
   peakY = null; valleyY = null;
   bobDir = 0; dirCount = 0; bobCooldown = 0; stepFlash = 0;
+  stunTimer = 0; stunCooldown = 0;
+  stunMat.opacity = 0;
+  scene.background.copy(origBgColor);
+  scene.fog.color.copy(origFogColor);
   yaw = 0; camera.rotation.set(0, 0, 0);
 
   // Clear track
@@ -814,8 +870,8 @@ function checkCollision() {
 
     if (pMaxX > obs.x - obs.hw && pMinX < obs.x + obs.hw &&
         pMaxY > obs.y - obs.hh && pMinY < obs.y + obs.hh) {
-      endGame();
-      return;
+      if (inVR) { stunPlayer(); return; }
+      else       { endGame();   return; }
     }
   }
 }
@@ -935,6 +991,20 @@ renderer.setAnimationLoop((time, frame) => {
   }
   // Smoothly adjust rig Y to terrain height
   rig.position.y += (terrainY - rig.position.y) * Math.min(1, dt * 10);
+
+  // ── Stun tick + red-flash visual ──────────────────────────
+  if (stunCooldown > 0) stunCooldown -= dt;
+  if (stunTimer > 0) {
+    stunTimer -= dt;
+    stepBoost  = 0; // keep player stopped throughout stun
+    if (stunTimer <= 0) { stunTimer = 0; stunCooldown = STUN_RECOOL; }
+  }
+  {
+    const f = Math.max(0, stunTimer / STUN_DURATION); // 1→0 during stun
+    stunMat.opacity = f * 0.55;
+    scene.background.copy(origBgColor).lerp(stunRedColor, f * 0.8);
+    scene.fog.color.copy(origFogColor).lerp(stunRedColor, f * 0.8);
+  }
 
   // ── Segment recycling ──────────────────────────────────────
   const farthest = segments.reduce((m, s) => Math.max(m, s.z), 0);
