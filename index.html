@@ -317,6 +317,32 @@
         material="color: #00ffcc; opacity: 0.7; shader: flat"
         visible="true">
       </a-entity>
+
+      <!-- In-VR debug panel (floats in view) -->
+      <a-entity id="vr-debug-panel" position="-0.35 -0.25 -0.8">
+        <a-plane
+          width="0.5" height="0.28"
+          material="color: #000000; opacity: 0.75; shader: flat; transparent: true">
+        </a-plane>
+        <a-text id="vr-debug-text"
+          value="Initializing..."
+          color="#00ffcc"
+          width="0.9"
+          align="left"
+          anchor="left"
+          position="-0.23 0.08 0.01"
+          wrap-count="28"
+          font="mozillavr">
+        </a-text>
+        <a-text id="vr-step-flash"
+          value=""
+          color="#ffffff"
+          width="1.2"
+          align="center"
+          position="0 -0.1 0.01"
+          font="mozillavr">
+        </a-text>
+      </a-entity>
     </a-camera>
   </a-entity>
 
@@ -362,11 +388,11 @@ let obstacles = [];           // obstacle entities
 // Head bob detection
 let lastHeadY = null;
 let headYHistory = [];
-let bobPhase = 'idle';        // 'up' | 'down'
-let bobThreshold = 0.015;     // minimum smoothed Y delta to count as bob
+let bobPhase = 'idle';
+let bobThreshold = 0.015;
 let bobCooldown = 0;
 let totalSteps = 0;
-let bobDisplay = 0;           // for step meter UI
+let bobDisplay = 0;
 
 // Keyboard fallback
 let keys = {};
@@ -530,12 +556,21 @@ function startGame() {
   gameOver = false;
   score = 0;
   distanceTraveled = 0;
-  speed = 4;
+  baseSpeed = 10;
   stepBoost = 0;
   totalSteps = 0;
   trackZ = 0;
   playerLaneX = 0;
   lastTime = null;
+  // Reset bob detector
+  headPeak = null;
+  headValley = null;
+  headYSmooth = null;
+  prevSmooth = null;
+  dirConfirm = 0;
+  lastDir = 0;
+  bobCooldown = 0;
+  stepFlash = 0;
 
   // Reset track
   const container = document.getElementById('track-container');
@@ -628,49 +663,112 @@ function gameLoop(timestamp) {
 }
 
 // ============================================================
-//  HEAD BOB DETECTION
+//  HEAD BOB DETECTION — peak/valley tracker
 // ============================================================
-function detectBob(headY, dt) {
-  if (lastHeadY === null) { lastHeadY = headY; return; }
 
-  const delta = headY - lastHeadY;
-  lastHeadY = headY;
+// We track a running peak (local max) and valley (local min).
+// When head reverses direction after dropping BOB_MIN_EXCURSION meters,
+// we count a step. This is robust to Quest 3's 72/90Hz tracking.
 
-  // Smooth history
-  headYHistory.push(delta);
-  if (headYHistory.length > 5) headYHistory.shift();
+const BOB_MIN_EXCURSION = 0.02; // 2cm vertical travel = one step (tune down if needed)
+const BOB_DIRECTION_SMOOTHING = 8; // frames to confirm direction reversal
 
-  const smoothDelta = headYHistory.reduce((a, b) => a + b, 0) / headYHistory.length;
-  bobDisplay = Math.abs(smoothDelta);
+let headPeak = null;       // highest Y seen in current upswing
+let headValley = null;     // lowest Y seen in current downswing
+let headYSmooth = null;    // exponentially smoothed head Y
+let prevSmooth = null;
+let dirConfirm = 0;        // positive = confirming upward, negative = confirming downward
+let lastDir = 0;           // 1 = going up, -1 = going down
+let stepFlash = 0;         // for visual feedback
 
-  if (bobCooldown > 0) { bobCooldown -= dt; return; }
+function detectBob(rawY, dt) {
+  // Exponential smoothing to remove jitter but keep real motion
+  if (headYSmooth === null) { headYSmooth = rawY; prevSmooth = rawY; headPeak = rawY; headValley = rawY; return; }
+  headYSmooth += (rawY - headYSmooth) * 0.4;
 
-  // State machine: detect downward then upward transition
-  if (bobPhase === 'idle' || bobPhase === 'up') {
-    if (smoothDelta < -bobThreshold) {
-      bobPhase = 'down';
+  const dy = headYSmooth - prevSmooth;
+  prevSmooth = headYSmooth;
+
+  // Direction confirmation: accumulate direction signal
+  dirConfirm += dy > 0 ? 1 : dy < 0 ? -1 : 0;
+  dirConfirm = Math.max(-BOB_DIRECTION_SMOOTHING, Math.min(BOB_DIRECTION_SMOOTHING, dirConfirm));
+
+  const newDir = dirConfirm >= 3 ? 1 : dirConfirm <= -3 ? -1 : lastDir;
+
+  if (newDir !== lastDir) {
+    // Direction changed
+    if (lastDir === 1 && newDir === -1) {
+      // Was going up, now going down → record peak
+      headPeak = headYSmooth;
+    }
+    if (lastDir === -1 && newDir === 1) {
+      // Was going down, now going up → record valley, check excursion
+      headValley = headYSmooth;
+      if (headPeak !== null) {
+        const excursion = headPeak - headValley;
+        if (excursion >= BOB_MIN_EXCURSION && bobCooldown <= 0) {
+          registerStep();
+          bobCooldown = 0.25;
+          stepFlash = 0.15;
+        }
+      }
+      headPeak = headYSmooth; // reset for next cycle
+    }
+    lastDir = newDir;
+  }
+
+  // Track running peak/valley within current direction
+  if (lastDir === 1 && headYSmooth > (headPeak ?? headYSmooth)) headPeak = headYSmooth;
+  if (lastDir === -1 && headYSmooth < (headValley ?? headYSmooth)) headValley = headYSmooth;
+
+  if (bobCooldown > 0) bobCooldown -= dt;
+  if (stepFlash > 0) stepFlash -= dt;
+
+  // Update excursion display for meter
+  bobDisplay = headPeak !== null && headValley !== null ? Math.abs(headPeak - headYSmooth) / BOB_MIN_EXCURSION : 0;
+
+  // Update in-scene debug text
+  updateDebugHUD(rawY, dy);
+}
+
+function updateDebugHUD(rawY, dy) {
+  const el = document.getElementById('debug-y');
+  if (el) el.textContent = rawY.toFixed(3);
+  const el2 = document.getElementById('debug-bob');
+  if (el2) el2.textContent = (headPeak !== null && headValley !== null ? (headPeak - (headValley ?? headYSmooth)).toFixed(3) : '---');
+  const el3 = document.getElementById('debug-steps');
+  if (el3) el3.textContent = totalSteps;
+
+  // Flash step meter on step
+  const fill = document.getElementById('meter-fill');
+  if (fill) {
+    if (stepFlash > 0) {
+      fill.style.background = 'linear-gradient(90deg, #ffffff, #00ffcc)';
+    } else {
+      fill.style.background = 'linear-gradient(90deg, #00ffcc, #00ff88)';
     }
   }
 
-  if (bobPhase === 'down') {
-    if (smoothDelta > bobThreshold * 0.7) {
-      // Completed a bob cycle!
-      bobPhase = 'up';
-      registerStep();
-      bobCooldown = 0.15; // debounce
-    }
+  // Update in-VR debug text entity if present
+  const vrDbg = document.getElementById('vr-debug-text');
+  if (vrDbg) {
+    const excursion = headPeak !== null && headValley !== null ? (headPeak - headYSmooth).toFixed(3) : '?';
+    vrDbg.setAttribute('value',
+      `Y: ${rawY.toFixed(3)}\nExcursion: ${excursion}\nThreshold: ${BOB_MIN_EXCURSION}\nSteps: ${totalSteps}\nDir: ${lastDir > 0 ? 'UP' : lastDir < 0 ? 'DOWN' : '---'}`
+    );
   }
-
-  // Update debug
-  document.getElementById('debug-y').textContent = headY.toFixed(3);
-  document.getElementById('debug-bob').textContent = smoothDelta.toFixed(4);
-  document.getElementById('debug-steps').textContent = totalSteps;
 }
 
 function registerStep() {
   totalSteps++;
-  // Each step gives a speed burst; baseSpeed scales with distance for difficulty
   stepBoost = Math.min(stepBoost + baseSpeed, baseSpeed * 1.5);
+
+  // Flash in-VR step indicator
+  const flashEl = document.getElementById('vr-step-flash');
+  if (flashEl) {
+    flashEl.setAttribute('value', '✓ STEP');
+    setTimeout(() => flashEl.setAttribute('value', ''), 200);
+  }
 }
 
 // ============================================================
