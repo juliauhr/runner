@@ -219,7 +219,7 @@ const TW        = 6;
 const TH        = 3.5;
 const LANE_W    = 1.6;
 
-const BOB_EXCURSION  = 0.006; // metres peak→valley to register step (~6mm)
+const BOB_EXCURSION  = 0.003; // metres peak→valley (~3mm)
 const BOB_ALPHA      = 0.25;  // EMA smoothing (lower = more smoothing)
 const DIR_CONFIRM    = 5;     // frames to confirm direction change
 const BOB_COOLDOWN   = 0.20;  // seconds between steps
@@ -227,48 +227,90 @@ const BOOST_AMOUNT   = 6;     // speed units added per step
 const BOOST_DECAY    = 2.5;   // speed units lost per second
 
 // ─── MATERIALS ───────────────────────────────────────────────
-const matFloor   = new THREE.MeshLambertMaterial({ color: 0x001133, emissive: 0x000511 });
-const matWall    = new THREE.MeshLambertMaterial({ color: 0x000a22, emissive: 0x001133, side: THREE.FrontSide });
-const matCeil    = new THREE.MeshLambertMaterial({ color: 0x000822, emissive: 0x000a1a });
-const matNeonG   = new THREE.MeshBasicMaterial({ color: 0x00ffcc });
-const matNeonB   = new THREE.MeshBasicMaterial({ color: 0x0055ff });
-const matObs = [
-  new THREE.MeshBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.9 }),
-  new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 }),
-  new THREE.MeshBasicMaterial({ color: 0xaa00ff, transparent: true, opacity: 0.9 }),
-  new THREE.MeshBasicMaterial({ color: 0x0088ff, transparent: true, opacity: 0.9 }),
+const matWall  = new THREE.MeshLambertMaterial({ color: 0x000a22, emissive: 0x001133, side: THREE.FrontSide });
+const matCeil  = new THREE.MeshLambertMaterial({ color: 0x000822, emissive: 0x000a1a });
+const matObsRed  = new THREE.MeshBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.9 });
+const matObsOrng = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.9 });
+
+// Neon palette — each segment picks one theme
+const THEMES = [
+  { strip1: 0x00ffcc, strip2: 0x0055ff, arch: 0x00ffcc, floor: 0x001133 },
+  { strip1: 0xff00aa, strip2: 0xff6600, arch: 0xff00aa, floor: 0x1a0011 },
+  { strip1: 0x00ff44, strip2: 0x004422, arch: 0x00ff44, floor: 0x001108 },
+  { strip1: 0xffcc00, strip2: 0xff4400, arch: 0xffcc00, floor: 0x1a0f00 },
+  { strip1: 0xaa44ff, strip2: 0x2200ff, arch: 0xaa44ff, floor: 0x0a0022 },
 ];
 
 // ─── TRACK ───────────────────────────────────────────────────
 const trackContainer = new THREE.Group();
 scene.add(trackContainer);
 
-let segments  = []; // { group, z }
-let obstacles = []; // { z (world), x, hw, y, hh }  — precomputed in local-track coords
+let segments  = [];
+let obstacles = [];
 
 function spawnSegment(z) {
   const g = new THREE.Group();
   g.position.z = -z;
 
-  const hw = TW / 2, hh = TH / 2;
-  const sl = SEG_LEN;
+  const hw = TW / 2, sl = SEG_LEN;
+  const theme = THEMES[Math.floor(Math.random() * THEMES.length)];
 
-  // Floor
-  addBox(g, TW, 0.05, sl, 0, -0.025, -sl/2, matFloor);
-  // Left wall
-  addBox(g, 0.05, TH, sl, -hw, hh, -sl/2, matWall);
-  // Right wall
-  addBox(g, 0.05, TH, sl,  hw, hh, -sl/2, matWall);
-  // Ceiling
-  addBox(g, TW, 0.05, sl, 0, TH+0.025, -sl/2, matCeil);
+  const mFloor = new THREE.MeshLambertMaterial({ color: theme.floor, emissive: theme.floor });
+  const mS1    = new THREE.MeshBasicMaterial({ color: theme.strip1 });
+  const mS2    = new THREE.MeshBasicMaterial({ color: theme.strip2 });
+  const mArch  = new THREE.MeshBasicMaterial({ color: theme.arch, transparent: true, opacity: 0.85 });
 
-  // Neon strips along the tunnel
-  addBox(g, 0.06, 0.06, sl, -hw+0.03, 0.03,    -sl/2, matNeonG);
-  addBox(g, 0.06, 0.06, sl,  hw-0.03, 0.03,    -sl/2, matNeonG);
-  addBox(g, 0.06, 0.06, sl, -hw+0.03, TH-0.03, -sl/2, matNeonB);
-  addBox(g, 0.06, 0.06, sl,  hw-0.03, TH-0.03, -sl/2, matNeonB);
+  // Core tunnel surfaces
+  addBox(g, TW, 0.05, sl,  0,        -0.025,   -sl/2, mFloor);
+  addBox(g, 0.05, TH, sl, -hw,        TH/2,    -sl/2, matWall);
+  addBox(g, 0.05, TH, sl,  hw,        TH/2,    -sl/2, matWall);
+  addBox(g, TW, 0.05, sl,  0,         TH+0.025,-sl/2, matCeil);
 
-  // Obstacles (skip first grace zone)
+  // Floor neon edge strips
+  addBox(g, 0.07, 0.07, sl, -hw+0.04, 0.035,    -sl/2, mS1);
+  addBox(g, 0.07, 0.07, sl,  hw-0.04, 0.035,    -sl/2, mS1);
+  // Ceiling neon edge strips
+  addBox(g, 0.07, 0.07, sl, -hw+0.04, TH-0.035, -sl/2, mS2);
+  addBox(g, 0.07, 0.07, sl,  hw-0.04, TH-0.035, -sl/2, mS2);
+  // Vertical corner strips at segment ends
+  addBox(g, 0.07, TH, 0.07, -hw+0.04, TH/2, -sl*0.1, mS1);
+  addBox(g, 0.07, TH, 0.07,  hw-0.04, TH/2, -sl*0.1, mS1);
+  addBox(g, 0.07, TH, 0.07, -hw+0.04, TH/2, -sl*0.9, mS2);
+  addBox(g, 0.07, TH, 0.07,  hw-0.04, TH/2, -sl*0.9, mS2);
+
+  // Arch rings — 1 or 2 per segment
+  const archCount = Math.random() < 0.5 ? 1 : 2;
+  for (let a = 0; a < archCount; a++) {
+    const az = -sl * (0.25 + a * 0.45);
+    addBox(g, TW + 0.14, 0.12, 0.12,  0,        TH,    az, mArch); // top bar
+    addBox(g, 0.12, TH,  0.12, -hw-0.07, TH/2,  az, mArch);        // left pillar
+    addBox(g, 0.12, TH,  0.12,  hw+0.07, TH/2,  az, mArch);        // right pillar
+  }
+
+  // Floor lane dashes
+  if (Math.random() < 0.6) {
+    for (let d = 0; d < 3; d++) {
+      addBox(g, 0.08, 0.02, 1.2, 0, 0.01, -sl*0.15 - d*sl*0.3, mS1);
+    }
+  }
+
+  // Mid-wall horizontal stripe
+  if (Math.random() < 0.5) {
+    const stripeY = 0.8 + Math.random() * 1.2;
+    addBox(g, 0.06, 0.06, sl, -hw+0.04, stripeY, -sl/2, mS2);
+    addBox(g, 0.06, 0.06, sl,  hw-0.04, stripeY, -sl/2, mS2);
+  }
+
+  // Floating ambient decoration cube (not collidable)
+  if (Math.random() < 0.45) {
+    const cx   = (Math.random() - 0.5) * (TW - 1.8);
+    const cy   = 0.6 + Math.random() * (TH - 1.2);
+    const cz   = -sl * (0.2 + Math.random() * 0.6);
+    const size = 0.07 + Math.random() * 0.13;
+    addBox(g, size, size, size, cx, cy, cz, mArch);
+  }
+
+  // Obstacles (skip grace zone)
   if (z > 35 && Math.random() < 0.72) spawnObstacle(g, z);
 
   trackContainer.add(g);
@@ -285,7 +327,7 @@ function addBox(parent, w, h, d, x, y, z, mat) {
 function spawnObstacle(parent, segZ) {
   const type = Math.floor(Math.random() * 2); // 0=side wall, 1=pillar only
   const lz = -(SEG_LEN * 0.2 + Math.random() * SEG_LEN * 0.55);
-  const mat = matObs[type];
+  const mat = type === 0 ? matObsRed : matObsOrng;
 
   if (type === 0) {
     // Side wall with gap
@@ -322,7 +364,7 @@ const dbgCtx     = dbgCanvas.getContext('2d');
 const dbgTex     = new THREE.CanvasTexture(dbgCanvas);
 const dbgMat     = new THREE.MeshBasicMaterial({ map: dbgTex, transparent: true, depthTest: false });
 const dbgPlane   = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 0.22), dbgMat);
-dbgPlane.position.set(0, 0, -0.65);
+dbgPlane.position.set(0, -0.28, -0.65);
 dbgPlane.renderOrder = 999;
 camera.add(dbgPlane);
 
@@ -579,7 +621,7 @@ renderer.setAnimationLoop((time, frame) => {
     if (passed > SEG_LEN * 2) {
       trackContainer.remove(segments[i].group);
       // Dispose geometries
-      segments[i].group.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+      segments[i].group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose) o.material.dispose(); });
       obstacles = obstacles.filter(o => o.segZ !== segments[i].z);
       segments.splice(i, 1);
     }
