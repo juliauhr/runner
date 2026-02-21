@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trail Runner VR</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a1a0a; overflow: hidden; font-family: 'Georgia', serif; }
+  canvas { display: block; }
+
+  #overlay {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(160deg, #0d2b0d 0%, #0a1a0a 60%, #050f05 100%);
+    z-index: 100;
+    transition: opacity 0.8s ease;
+  }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .title-block { text-align: center; margin-bottom: 40px; }
+  .title-block h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    color: #c8e8a0;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 400;
+    text-shadow: 0 0 40px rgba(150,220,80,0.4);
+    line-height: 1;
+  }
+  .title-block p {
+    color: #7aaa50;
+    font-size: 1rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 12px;
+    opacity: 0.8;
+  }
+
+  .instructions {
+    background: rgba(20,45,15,0.8);
+    border: 1px solid rgba(120,200,60,0.25);
+    border-radius: 4px;
+    padding: 28px 36px;
+    max-width: 480px;
+    margin-bottom: 40px;
+  }
+  .instructions h3 {
+    color: #a0cc60;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .instructions li {
+    color: #88aa70;
+    font-size: 0.92rem;
+    line-height: 1.9;
+    list-style: none;
+    padding-left: 16px;
+    position: relative;
+  }
+  .instructions li::before {
+    content: '→';
+    position: absolute; left: 0;
+    color: #6aaa30;
+  }
+
+  .btn-row { display: flex; gap: 16px; }
+
+  button {
+    padding: 14px 36px;
+    font-family: 'Georgia', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border: none; border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #btn-desktop {
+    background: #4a8a20;
+    color: #d0f090;
+  }
+  #btn-desktop:hover { background: #5aaa28; transform: translateY(-1px); }
+  #btn-vr {
+    background: rgba(74,138,32,0.2);
+    color: #90c060;
+    border: 1px solid rgba(74,138,32,0.5);
+  }
+  #btn-vr:hover { background: rgba(74,138,32,0.35); }
+  #btn-vr:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* HUD */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 20px 28px;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  #hud.visible { opacity: 1; }
+
+  .hud-panel {
+    background: rgba(5,15,5,0.65);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(100,180,40,0.2);
+    border-radius: 4px;
+    padding: 10px 18px;
+    color: #a0cc60;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .hud-panel .val {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #c8e890;
+    display: block;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+
+  #speed-bar-container {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.5s;
+    text-align: center;
+  }
+  #speed-bar-container.visible { opacity: 1; }
+  #speed-label {
+    color: #7aaa50;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  #speed-bar-bg {
+    width: 100%; height: 6px;
+    background: rgba(20,50,10,0.8);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(80,160,20,0.3);
+  }
+  #speed-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #4a8a20, #a0e040);
+    border-radius: 3px;
+    transition: width 0.1s;
+  }
+
+  #gameover {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(5, 10, 5, 0.88);
+    z-index: 200;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  #gameover.visible { opacity: 1; pointer-events: all; }
+  #gameover h2 {
+    color: #c8e890;
+    font-size: 3rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    text-shadow: 0 0 30px rgba(150,220,60,0.4);
+  }
+  #gameover p { color: #7aaa50; letter-spacing: 0.2em; margin-bottom: 32px; font-size: 0.9rem; }
+  #final-score { color: #a0e060; font-size: 1.5rem; letter-spacing: 0.1em; margin-bottom: 28px; }
+  #btn-restart {
+    background: #3a7a18;
+    color: #c0e880;
+    padding: 12px 40px;
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
+  }
+  #btn-restart:hover { background: #4a9a20; }
+
+  #mouse-warning {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(80,40,0,0.85);
+    border: 1px solid rgba(200,140,0,0.4);
+    color: #e0b060;
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+    text-align: center;
+  }
+  #mouse-warning.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div id="overlay">
+  <div class="title-block">
+    <h1>Trail Runner</h1>
+    <p>WebXR · Treadmill Edition</p>
+  </div>
+  <div class="instructions">
+    <h3>Setup</h3>
+    <ul>
+      <li>Pair a Bluetooth mouse to your Quest</li>
+      <li>Tape the mouse to the treadmill belt, sensor facing down</li>
+      <li>Click "Start Desktop" or "Enter VR" then click the canvas</li>
+      <li>Walk on the treadmill — the belt moves the mouse forward</li>
+      <li>Dodge obstacles. Don't stop!</li>
+    </ul>
+  </div>
+  <div class="btn-row">
+    <button id="btn-desktop">Start Desktop</button>
+    <button id="btn-vr">Enter VR</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-panel">Distance<span class="val" id="hud-dist">0m</span></div>
+  <div class="hud-panel">Score<span class="val" id="hud-score">0</span></div>
+  <div class="hud-panel">Lives<span class="val" id="hud-lives">❤❤❤</span></div>
+</div>
+
+<div id="speed-bar-container">
+  <div id="speed-label">Speed</div>
+  <div id="speed-bar-bg"><div id="speed-bar"></div></div>
+</div>
+
+<!-- Game Over -->
+<div id="gameover">
+  <h2>Wipeout</h2>
+  <p>You hit too many obstacles</p>
+  <div id="final-score"></div>
+  <button id="btn-restart">Run Again</button>
+</div>
+
+<div id="mouse-warning">⚠ Click the page to capture mouse input</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const state = {
+  running: false,
+  speed: 0,
+  distance: 0,
+  score: 0,
+  lives: 3,
+  dead: false,
+  mouseLocked: false,
+  rawMovement: 0,       // accumulated mouse Y per frame
+  invincible: false,
+};
+
+const SENS = 0.018;         // mouse delta → speed multiplier
+const MAX_SPEED = 18;
+const FRICTION = 0.92;
+const CHUNK_LENGTH = 60;
+const CHUNKS_AHEAD = 4;
+const LANE_POSITIONS = [-2.5, 0, 2.5];
+let currentLane = 1; // middle
+
+// ─── Audio (Web Audio API procedural) ────────────────────────────────────────
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type, dur, vol = 0.3) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
+function playFootstep() {
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+  const src = audioCtx.createBufferSource();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass'; filter.frequency.value = 300; filter.Q.value = 0.8;
+  src.buffer = buf;
+  src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  gain.gain.value = 0.25;
+  src.start();
+}
+
+function playHit() {
+  playTone(80, 'sawtooth', 0.4, 0.5);
+  setTimeout(() => playTone(60, 'sine', 0.3, 0.3), 80);
+}
+
+function playDodge() {
+  playTone(880, 'sine', 0.12, 0.2);
+  setTimeout(() => playTone(1100, 'sine', 0.1, 0.15), 80);
+}
+
+function playWind(speed) {
+  // handled via gain node continuously
+}
+
+// Wind ambience node
+const windBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+const wd = windBuf.getChannelData(0);
+for (let i = 0; i < wd.length; i++) wd[i] = Math.random() * 2 - 1;
+const windSrc = audioCtx.createBufferSource();
+windSrc.buffer = windBuf; windSrc.loop = true;
+const windFilter = audioCtx.createBiquadFilter();
+windFilter.type = 'lowpass'; windFilter.frequency.value = 400;
+const windGain = audioCtx.createGain(); windGain.gain.value = 0;
+windSrc.connect(windFilter); windFilter.connect(windGain); windGain.connect(audioCtx.destination);
+windSrc.start();
+
+// Footstep rhythm
+let footstepTimer = 0;
+
+// ─── Three.js Setup ───────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.FogExp2(0x9fd8c8, 0.025);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 1.65, 0);
+
+// XR
+renderer.xr.enabled = true;
+
+// ─── Lighting ─────────────────────────────────────────────────────────────────
+const ambient = new THREE.AmbientLight(0xc8e8d0, 0.6);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xffe0a0, 1.4);
+sun.position.set(30, 60, -20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 200;
+sun.shadow.camera.left = -40;
+sun.shadow.camera.right = 40;
+sun.shadow.camera.top = 40;
+sun.shadow.camera.bottom = -40;
+scene.add(sun);
+
+const fill = new THREE.DirectionalLight(0xa0d0ff, 0.4);
+fill.position.set(-10, 10, 10);
+scene.add(fill);
+
+// ─── Materials ────────────────────────────────────────────────────────────────
+const grassMat = new THREE.MeshLambertMaterial({ color: 0x4a8a2a });
+const dirtMat = new THREE.MeshLambertMaterial({ color: 0x8b6040 });
+const rockMat = new THREE.MeshLambertMaterial({ color: 0x888880 });
+const logMat = new THREE.MeshLambertMaterial({ color: 0x7a5530 });
+const leafMat = new THREE.MeshLambertMaterial({ color: 0x2d6e1a });
+const darkLeafMat = new THREE.MeshLambertMaterial({ color: 0x1a5010 });
+const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5a3820 });
+const flowerMat = new THREE.MeshLambertMaterial({ color: 0xffcc40 });
+
+// ─── Player / Camera Rig ─────────────────────────────────────────────────────
+const playerRig = new THREE.Group();
+scene.add(playerRig);
+playerRig.add(camera);
+
+// ─── Path / Chunks ────────────────────────────────────────────────────────────
+const chunks = [];
+let chunkZ = 0;
+
+function makeTree(x, z) {
+  const g = new THREE.Group();
+  const trunkH = 4 + Math.random() * 3;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, trunkH, 7), trunkMat);
+  trunk.position.y = trunkH / 2;
+  trunk.castShadow = true;
+  g.add(trunk);
+  // Multiple leaf layers
+  for (let i = 0; i < 3; i++) {
+    const r = 1.8 - i * 0.4;
+    const h = 2.5 - i * 0.3;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), i % 2 === 0 ? leafMat : darkLeafMat);
+    cone.position.y = trunkH * 0.6 + i * 1.2;
+    cone.castShadow = true;
+    g.add(cone);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+
+function makeRock(x, z) {
+  const g = new THREE.Group();
+  const scale = 0.4 + Math.random() * 0.8;
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(scale, 0), rockMat);
+  rock.rotation.set(Math.random(), Math.random(), Math.random());
+  rock.position.y = scale * 0.5;
+  rock.castShadow = true;
+  g.add(rock);
+  g.position.set(x, 0, z);
+  return g;
+}
+
+function makeBush(x, z) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const r = 0.4 + Math.random() * 0.3;
+    const bush = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), leafMat);
+    bush.position.set((Math.random()-0.5)*0.5, r*0.7, (Math.random()-0.5)*0.5);
+    bush.castShadow = true;
+    g.add(bush);
+  }
+  // optional flower
+  if (Math.random() < 0.3) {
+    const f = new THREE.Mesh(new THREE.SphereGeometry(0.08, 5, 4), flowerMat);
+    f.position.set(0, 1, 0);
+    g.add(f);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+
+// Obstacles
+const obstaclePool = [];
+const activeObstacles = [];
+
+function createObstacleMesh(type) {
+  let mesh;
+  if (type === 'log') {
+    mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 1.2, 8), logMat);
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.y = 0.3;
+    mesh.castShadow = true;
+  } else if (type === 'rock') {
+    mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), rockMat);
+    mesh.rotation.set(Math.random(), Math.random(), 0);
+    mesh.position.y = 0.5;
+    mesh.castShadow = true;
+  } else {
+    // bush obstacle
+    mesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 6), leafMat);
+    mesh.position.y = 0.6;
+    mesh.castShadow = true;
+  }
+  const g = new THREE.Group();
+  g.add(mesh);
+  return g;
+}
+
+function spawnObstacle(z) {
+  const types = ['log', 'rock', 'bush'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const lane = Math.floor(Math.random() * 3);
+  const obs = createObstacleMesh(type);
+  obs.position.set(LANE_POSITIONS[lane], 0, z);
+  obs.userData = { lane, active: true, type };
+  scene.add(obs);
+  activeObstacles.push(obs);
+}
+
+function buildChunk(zStart) {
+  const group = new THREE.Group();
+
+  // Trail path
+  const pathGeo = new THREE.PlaneGeometry(5.5, CHUNK_LENGTH);
+  const path = new THREE.Mesh(pathGeo, dirtMat);
+  path.rotation.x = -Math.PI / 2;
+  path.position.set(0, 0, zStart - CHUNK_LENGTH / 2);
+  path.receiveShadow = true;
+  group.add(path);
+
+  // Grass sides
+  for (let side = -1; side <= 1; side += 2) {
+    const gGeo = new THREE.PlaneGeometry(20, CHUNK_LENGTH);
+    const grass = new THREE.Mesh(gGeo, grassMat);
+    grass.rotation.x = -Math.PI / 2;
+    grass.position.set(side * 13, -0.01, zStart - CHUNK_LENGTH / 2);
+    grass.receiveShadow = true;
+    group.add(grass);
+  }
+
+  // Lane markers (subtle rocks/twigs)
+  for (let z = zStart - 4; z > zStart - CHUNK_LENGTH; z -= 6) {
+    for (let lane = 0; lane < 2; lane++) {
+      const marker = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 0.3, 5),
+        rockMat
+      );
+      marker.position.set(lane === 0 ? -2.5 : 2.5, 0.15, z + (Math.random()-0.5));
+      group.add(marker);
+    }
+  }
+
+  // Trees lining the path
+  for (let z = zStart - 3; z > zStart - CHUNK_LENGTH; z -= 7 + Math.random() * 5) {
+    group.add(makeTree(-5 - Math.random() * 6, z + (Math.random()-0.5)*3));
+    group.add(makeTree(5 + Math.random() * 6, z + (Math.random()-0.5)*3));
+  }
+
+  // Scattered bushes & rocks in forest
+  for (let i = 0; i < 12; i++) {
+    const z = zStart - Math.random() * CHUNK_LENGTH;
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = side * (4 + Math.random() * 10);
+    if (Math.random() < 0.6) group.add(makeBush(x, z));
+    else group.add(makeRock(x, z));
+  }
+
+  // Obstacles (only after distance > 20)
+  if (zStart < -20) {
+    const numObs = Math.floor(1 + Math.random() * 3);
+    const usedLanes = new Set();
+    for (let i = 0; i < numObs; i++) {
+      const zOff = -8 - Math.random() * (CHUNK_LENGTH - 16);
+      const z = zStart + zOff;
+      // ensure not all lanes blocked
+      const availLanes = [0,1,2].filter(l => !usedLanes.has(l));
+      if (availLanes.length === 0) break;
+      const lane = availLanes[Math.floor(Math.random() * availLanes.length)];
+      usedLanes.add(lane);
+      const obs = createObstacleMesh(['log','rock','bush'][Math.floor(Math.random()*3)]);
+      obs.position.set(LANE_POSITIONS[lane], 0, z);
+      obs.userData = { lane, active: true };
+      scene.add(obs);
+      activeObstacles.push(obs);
+    }
+  }
+
+  scene.add(group);
+  chunks.push({ group, zStart });
+}
+
+// Build initial chunks
+for (let i = 0; i < CHUNKS_AHEAD; i++) {
+  buildChunk(chunkZ);
+  chunkZ -= CHUNK_LENGTH;
+}
+
+// ─── Sky / Clouds ─────────────────────────────────────────────────────────────
+const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+const cloudGroup = new THREE.Group();
+scene.add(cloudGroup);
+
+function makeCloud(x, y, z) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 5; i++) {
+    const r = 3 + Math.random() * 3;
+    const s = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), cloudMat);
+    s.position.set((Math.random()-0.5)*8, (Math.random()-0.5)*2, (Math.random()-0.5)*6);
+    g.add(s);
+  }
+  g.position.set(x, y, z);
+  return g;
+}
+for (let i = 0; i < 12; i++) {
+  cloudGroup.add(makeCloud(
+    (Math.random()-0.5) * 120,
+    20 + Math.random() * 15,
+    -Math.random() * 200
+  ));
+}
+
+// ─── Birds (simple flocking V) ────────────────────────────────────────────────
+const birdGeo = new THREE.BufferGeometry();
+const birdVerts = [];
+for (let i = 0; i < 7; i++) {
+  birdVerts.push(-i*2, Math.abs(i-3)*0.5, 0,  i*2, Math.abs(i-3)*0.5, 0);
+}
+birdGeo.setAttribute('position', new THREE.Float32BufferAttribute(birdVerts, 3));
+const birdMat = new THREE.LineBasicMaterial({ color: 0x334422 });
+const birds = new THREE.LineSegments(birdGeo, birdMat);
+birds.position.set(15, 25, -60);
+birds.scale.set(0.3, 0.3, 0.3);
+scene.add(birds);
+
+// ─── Mouse Input ─────────────────────────────────────────────────────────────
+document.addEventListener('mousemove', (e) => {
+  if (!state.mouseLocked && !renderer.xr.isPresenting) return;
+  // movementY > 0 = mouse moving forward on belt = treadmill moving
+  const dy = e.movementY || 0;
+  if (dy > 0) state.rawMovement += dy; // only forward (treadmill forward)
+});
+
+document.addEventListener('pointerlockchange', () => {
+  state.mouseLocked = document.pointerLockElement === renderer.domElement;
+  document.getElementById('mouse-warning').classList.toggle('visible', !state.mouseLocked && state.running);
+});
+
+renderer.domElement.addEventListener('click', () => {
+  if (state.running && !renderer.xr.isPresenting) {
+    renderer.domElement.requestPointerLock();
+  }
+});
+
+// ─── Lane Switching (keyboard / controller) ──────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (!state.running || state.dead) return;
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') shiftLane(-1);
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') shiftLane(1);
+  // DEBUG: press W to simulate treadmill
+  if (e.key === 'w' || e.key === 'W') state.rawMovement += 15;
+});
+
+function shiftLane(dir) {
+  const newLane = Math.max(0, Math.min(2, currentLane + dir));
+  if (newLane !== currentLane) {
+    currentLane = newLane;
+    playDodge();
+  }
+}
+
+// ─── Collision Detection ──────────────────────────────────────────────────────
+const playerBox = new THREE.Box3();
+const obsBox = new THREE.Box3();
+
+function checkCollisions() {
+  if (state.invincible) return;
+  const px = LANE_POSITIONS[currentLane];
+  playerBox.setFromCenterAndSize(
+    new THREE.Vector3(px, 1, playerRig.position.z - 0.5),
+    new THREE.Vector3(0.7, 1.6, 1.0)
+  );
+
+  for (let i = activeObstacles.length - 1; i >= 0; i--) {
+    const obs = activeObstacles[i];
+    if (!obs.userData.active) continue;
+    obsBox.setFromObject(obs);
+    if (playerBox.intersectsBox(obsBox)) {
+      obs.userData.active = false;
+      activeObstacles.splice(i, 1);
+      scene.remove(obs);
+      state.lives--;
+      playHit();
+      updateLivesHUD();
+      // brief invincibility
+      state.invincible = true;
+      flashScreen();
+      setTimeout(() => state.invincible = false, 1500);
+      if (state.lives <= 0) triggerGameOver();
+      break;
+    }
+  }
+}
+
+function flashScreen() {
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:rgba(255,80,0,0.35);z-index:500;pointer-events:none;';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 300);
+}
+
+// ─── HUD Updates ─────────────────────────────────────────────────────────────
+const hudDist = document.getElementById('hud-dist');
+const hudScore = document.getElementById('hud-score');
+const hudLives = document.getElementById('hud-lives');
+const speedBar = document.getElementById('speed-bar');
+
+function updateLivesHUD() {
+  const hearts = ['❤','❤','❤'];
+  for (let i = state.lives; i < 3; i++) hearts[i] = '♡';
+  hudLives.textContent = hearts.join('');
+}
+
+// ─── Game Over ────────────────────────────────────────────────────────────────
+function triggerGameOver() {
+  state.dead = true;
+  state.running = false;
+  document.getElementById('final-score').textContent = `Distance: ${Math.floor(state.distance)}m · Score: ${state.score}`;
+  document.getElementById('gameover').classList.add('visible');
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  location.reload();
+});
+
+// ─── Start Game ───────────────────────────────────────────────────────────────
+function startGame(vr = false) {
+  audioCtx.resume();
+  state.running = true;
+  state.dead = false;
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('hud').classList.add('visible');
+  document.getElementById('speed-bar-container').classList.add('visible');
+  if (!vr) {
+    setTimeout(() => renderer.domElement.requestPointerLock(), 600);
+    document.getElementById('mouse-warning').classList.add('visible');
+    setTimeout(() => document.getElementById('mouse-warning').classList.remove('visible'), 3000);
+  }
+}
+
+document.getElementById('btn-desktop').addEventListener('click', () => startGame(false));
+
+// VR Button
+async function setupVR() {
+  const btn = document.getElementById('btn-vr');
+  if (!navigator.xr) { btn.disabled = true; btn.textContent = 'VR Not Supported'; return; }
+  const supported = await navigator.xr.isSessionSupported('immersive-vr').catch(() => false);
+  if (!supported) { btn.disabled = true; btn.textContent = 'VR Unavailable'; return; }
+  btn.addEventListener('click', async () => {
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', {
+        optionalFeatures: ['local-floor', 'bounded-floor']
+      });
+      renderer.xr.setSession(session);
+      renderer.xr.setReferenceSpaceType('local-floor');
+      startGame(true);
+    } catch(e) { console.error(e); }
+  });
+}
+setupVR();
+
+// ─── Main Loop ────────────────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+let laneTargetX = 0;
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  if (state.running && !state.dead) {
+    // Speed from mouse
+    const inputSpeed = state.rawMovement * SENS / dt;
+    state.rawMovement = 0;
+    state.speed = Math.min(MAX_SPEED, state.speed * FRICTION + inputSpeed * (1 - FRICTION) * 8);
+    if (state.speed < 0.1) state.speed = 0;
+
+    // Move player forward
+    const dz = -state.speed * dt;
+    playerRig.position.z += dz;
+    state.distance += Math.abs(dz);
+    state.score = Math.floor(state.distance * 2 + state.speed * 0.5);
+
+    // Lane lerp
+    laneTargetX = LANE_POSITIONS[currentLane];
+    playerRig.position.x += (laneTargetX - playerRig.position.x) * 8 * dt;
+
+    // Camera bob
+    camera.position.y = 1.65 + Math.sin(state.distance * 3.5) * (state.speed / MAX_SPEED) * 0.06;
+
+    // Chunk management
+    const frontZ = playerRig.position.z - CHUNKS_AHEAD * CHUNK_LENGTH;
+    if (chunkZ > frontZ) {
+      buildChunk(chunkZ);
+      chunkZ -= CHUNK_LENGTH;
+    }
+    // Remove old chunks
+    for (let i = chunks.length - 1; i >= 0; i--) {
+      if (chunks[i].zStart > playerRig.position.z + CHUNK_LENGTH * 1.5) {
+        scene.remove(chunks[i].group);
+        chunks.splice(i, 1);
+      }
+    }
+    // Remove passed obstacles
+    for (let i = activeObstacles.length - 1; i >= 0; i--) {
+      if (activeObstacles[i].position.z > playerRig.position.z + 5) {
+        scene.remove(activeObstacles[i]);
+        activeObstacles.splice(i, 1);
+      }
+    }
+
+    // Collision
+    if (state.speed > 0.5) checkCollisions();
+
+    // Footsteps
+    footstepTimer += state.speed * dt;
+    if (footstepTimer > 1.0 && state.speed > 2) {
+      playFootstep();
+      footstepTimer = 0;
+    }
+
+    // Wind
+    windGain.gain.setTargetAtTime(state.speed / MAX_SPEED * 0.18, audioCtx.currentTime, 0.3);
+
+    // Birds drift
+    birds.position.z = playerRig.position.z - 60 + Math.sin(Date.now() * 0.0003) * 10;
+    birds.position.x = 15 + Math.sin(Date.now() * 0.0001) * 20;
+
+    // Move clouds with player
+    cloudGroup.position.z = playerRig.position.z - 100;
+
+    // HUD
+    hudDist.textContent = `${Math.floor(state.distance)}m`;
+    hudScore.textContent = state.score;
+    speedBar.style.width = `${(state.speed / MAX_SPEED) * 100}%`;
+
+    // Slow down = warning
+    if (state.distance > 10 && state.speed < 1 && !state.dead) {
+      // subtle red tint handled by fog
+      scene.fog.color.set(state.speed < 0.3 ? 0xd09080 : 0x9fd8c8);
+    } else {
+      scene.fog.color.set(0x9fd8c8);
+    }
+  }
+
+  renderer.render(scene, camera);
+});
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
