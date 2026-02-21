@@ -203,9 +203,27 @@
     text-align: center;
   }
   #mouse-warning.visible { opacity: 1; }
+
+  #gp-debug {
+    position: fixed; bottom: 20px; right: 20px;
+    background: rgba(5,15,5,0.82);
+    border: 1px solid rgba(100,180,40,0.3);
+    color: #80bb50;
+    font-size: 0.68rem;
+    font-family: monospace;
+    padding: 8px 14px;
+    border-radius: 3px;
+    z-index: 60;
+    pointer-events: none;
+    line-height: 1.7;
+    min-width: 200px;
+  }
 </style>
 </head>
 <body>
+
+<!-- Gamepad debug panel (always visible so you can calibrate) -->
+<div id="gp-debug">🎮 No gamepads detected</div>
 
 <!-- Start Screen -->
 <div id="overlay">
@@ -604,16 +622,17 @@ birds.scale.set(0.3, 0.3, 0.3);
 scene.add(birds);
 
 // ─── Mouse Input ─────────────────────────────────────────────────────────────
+// DESKTOP: pointer lock gives us raw movementY deltas
 document.addEventListener('mousemove', (e) => {
-  if (!state.mouseLocked && !renderer.xr.isPresenting) return;
-  // movementY > 0 = mouse moving forward on belt = treadmill moving
+  if (renderer.xr.isPresenting) return; // VR handles input differently
+  if (!state.mouseLocked) return;
   const dy = e.movementY || 0;
-  if (dy > 0) state.rawMovement += dy; // only forward (treadmill forward)
+  if (dy > 0) state.rawMovement += dy;
 });
 
 document.addEventListener('pointerlockchange', () => {
   state.mouseLocked = document.pointerLockElement === renderer.domElement;
-  document.getElementById('mouse-warning').classList.toggle('visible', !state.mouseLocked && state.running);
+  document.getElementById('mouse-warning').classList.toggle('visible', !state.mouseLocked && state.running && !renderer.xr.isPresenting);
 });
 
 renderer.domElement.addEventListener('click', () => {
@@ -621,6 +640,60 @@ renderer.domElement.addEventListener('click', () => {
     renderer.domElement.requestPointerLock();
   }
 });
+
+// VR: A Bluetooth mouse paired to Quest registers as a Gamepad.
+// We poll navigator.getGamepads() every frame and read axis 1 (Y axis).
+// The mouse moving forward on the treadmill belt = negative axis 1 on most devices.
+// We track the previous axis value and accumulate deltas to mimic movementY.
+const gpState = {
+  prevAxes: {}, // gamepadIndex -> [prevAxis0, prevAxis1]
+};
+
+function pollGamepadForVR() {
+  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+  const debugEl = document.getElementById('gp-debug');
+  let debugLines = [];
+
+  for (let i = 0; i < gamepads.length; i++) {
+    const gp = gamepads[i];
+    if (!gp) continue;
+
+    const axisStr = Array.from(gp.axes).map(a => a.toFixed(2)).join(', ');
+    debugLines.push(`GP${i} [${gp.axes.length}ax ${gp.buttons.length}btn]`);
+    debugLines.push(`axes: ${axisStr}`);
+
+    // Skip XR controller gamepads — they're mapped differently
+    // Quest controllers report as 'OpenVR Gamepad' or similar with many buttons
+    // A plain mouse typically has 2-3 axes and very few buttons
+    const looksLikeMouse = gp.axes.length <= 4 && gp.buttons.length <= 5;
+    if (!looksLikeMouse) continue;
+
+    const prev = gpState.prevAxes[i] ?? [0, 0];
+    const currY = gp.axes[1];
+    const dy = currY - prev[1];
+
+    // Only drive movement from gamepad when in VR (desktop uses pointer lock)
+    if (renderer.xr.isPresenting && Math.abs(dy) > 0.001) {
+      state.rawMovement += Math.abs(dy) * 120;
+    }
+
+    gpState.prevAxes[i] = [gp.axes[0], currY];
+
+    const currX = gp.axes[0];
+    const dx = currX - prev[0];
+    if (renderer.xr.isPresenting && Math.abs(dx) > 0.15 && Math.abs(dx) > Math.abs(dy) * 2) {
+      if (dx > 0.15) shiftLane(1);
+      else if (dx < -0.15) shiftLane(-1);
+      gpState.prevAxes[i][0] = 0;
+    }
+  }
+
+  if (debugLines.length > 0) {
+    debugEl.innerHTML = debugLines.join('<br>');
+  } else {
+    debugEl.textContent = '🎮 No gamepads detected';
+  }
+}
 
 // ─── Lane Switching (keyboard / controller) ──────────────────────────────────
 document.addEventListener('keydown', (e) => {
@@ -748,7 +821,10 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
 
   if (state.running && !state.dead) {
-    // Speed from mouse
+    // Poll gamepad (Bluetooth mouse in VR)
+    pollGamepadForVR();
+
+    // Speed from mouse (desktop: pointer lock deltas | VR: gamepad axis deltas)
     const inputSpeed = state.rawMovement * SENS / dt;
     state.rawMovement = 0;
     state.speed = Math.min(MAX_SPEED, state.speed * FRICTION + inputSpeed * (1 - FRICTION) * 8);
